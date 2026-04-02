@@ -348,7 +348,6 @@ export default function NeedsAssessment() {
   const [d, setD] = useState(() => saved.current?.data ? { ...defaultData, ...saved.current.data } : { ...defaultData });
   const [resumed, setResumed] = useState(!!saved.current?.data?.cn);
   const [expandedHot, setExpandedHot] = useState({});
-  const [emailStatus, setEmailStatus] = useState(null); // null | "sending" | "sent" | "error"
 
   const s = k => v => setD(p => ({ ...p, [k]: v }));
   const togLife = i => setD(p => ({ ...p, life: p.life.includes(i) ? p.life.filter(x => x !== i) : [...p.life, i] }));
@@ -386,24 +385,64 @@ export default function NeedsAssessment() {
   ];
   const pct = Math.round(fields.filter(g => g.some(v => v && v.toString().trim())).length / fields.length * 100);
 
-  /* ── SEND EMAIL ── */
-  const sendEmail = async (submission) => {
-    const spInfo = SALESPEOPLE.find(p => p.name === submission.sp);
-    const recipients = [...MANAGER_EMAILS];
-    if (spInfo) recipients.push(spInfo.email);
-    const html = buildEmailHTML(submission);
-    const subject = `Discovery: ${submission.cn || "Customer"} — ${submission.sp || "Salesperson"}`;
-    try {
-      setEmailStatus("sending");
-      const res = await fetch("/api/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recipients, subject, html }),
-      });
-      setEmailStatus(res.ok ? "sent" : "error");
-    } catch {
-      setEmailStatus("error");
+  /* ── BUILD EMAIL TEXT (plain text for mailto) ── */
+  const buildEmailText = (sub) => {
+    const hotLabels = (sub.hot || []).map(h => walkaroundGuide[h]?.label || h);
+    const lines = [];
+    lines.push(`DISCOVERY ASSESSMENT — Fred Anderson Toyota of Cape Coral`);
+    lines.push(`${"─".repeat(50)}`);
+    lines.push(`Customer: ${sub.cn || "—"}`);
+    lines.push(`Salesperson: ${sub.sp || "—"}`);
+    lines.push(`Date: ${new Date(sub.ts).toLocaleString()}`);
+    lines.push("");
+    if (sub.stk || sub.vm || sub.vmod) {
+      lines.push(`VEHICLE OF INTEREST`);
+      if (sub.stk) lines.push(`  Stock #: ${sub.stk}`);
+      lines.push(`  Vehicle: ${[sub.vy, sub.vm, sub.vmod].filter(Boolean).join(" ")}`);
+      lines.push("");
     }
+    if (sub.mot) { lines.push(`MOTIVATION`); lines.push(`  ${sub.mot}`); lines.push(""); }
+    if (sub.hasTrade && sub.tv) {
+      lines.push(`TRADE-IN`);
+      lines.push(`  Vehicle: ${sub.tv}`);
+      if (sub.tlike) lines.push(`  Loves: ${sub.tlike}`);
+      if (sub.tdis) lines.push(`  Wishes Different: ${sub.tdis}`);
+      if (sub.tlen) lines.push(`  Lender: ${sub.tlen}`);
+      if (sub.tbal) lines.push(`  Balance: ${sub.tbal}`);
+      if (sub.tpay) lines.push(`  Payment: ${sub.tpay}`);
+      lines.push("");
+    }
+    if (!sub.hasTrade && sub.rv) {
+      lines.push(`RECENT VEHICLE`);
+      lines.push(`  Driving: ${sub.rv}`);
+      if (sub.rl) lines.push(`  Liked: ${sub.rl}`);
+      if (sub.rd) lines.push(`  Didn't Work: ${sub.rd}`);
+      lines.push("");
+    }
+    if (sub.life?.length > 0) { lines.push(`LIFESTYLE: ${sub.life.join(", ")}`); lines.push(""); }
+    if (hotLabels.length > 0) { lines.push(`WALKAROUND FOCUS: ${hotLabels.join(", ")}`); lines.push(""); }
+    if (sub.mh || sub.nn) {
+      lines.push(`KEY NOTES`);
+      if (sub.mh) lines.push(`  Must-Haves: ${sub.mh}`);
+      if (sub.nn) lines.push(`  Notes: ${sub.nn}`);
+      lines.push("");
+    }
+    if (sub.pd || sub.di) {
+      lines.push(`DECISION MAKERS`);
+      if (sub.pd) lines.push(`  Primary Driver: ${sub.pd}`);
+      if (sub.di) lines.push(`  Influencers: ${sub.di}`);
+    }
+    return lines.join("\n");
+  };
+
+  const openEmail = (sub) => {
+    const spInfo = SALESPEOPLE.find(p => p.name === sub.sp);
+    const to = [...MANAGER_EMAILS];
+    if (spInfo) to.push(spInfo.email);
+    const subject = `Discovery: ${sub.cn || "Customer"} — ${sub.sp || "Salesperson"}`;
+    const body = buildEmailText(sub);
+    const mailto = `mailto:${to.join(",")}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(mailto, "_blank");
   };
 
   const submit = () => {
@@ -411,7 +450,6 @@ export default function NeedsAssessment() {
     localStorage.removeItem(SAVE_KEY);
     setSubs(p => [...p, submission]);
     setView("done");
-    sendEmail(submission);
   };
 
   const startNew = () => {
@@ -421,7 +459,6 @@ export default function NeedsAssessment() {
     setD({ ...defaultData, sp: d.sp });
     setHasTrade(true);
     setExpandedHot({});
-    setEmailStatus(null);
   };
 
   const resetForm = () => {
@@ -459,19 +496,14 @@ export default function NeedsAssessment() {
           </p>
         </div>
 
-        {/* Email status */}
-        {emailStatus && (
-          <div style={{
-            padding: "8px 16px", borderRadius: 8, marginBottom: 12, textAlign: "center", fontSize: 12, fontFamily: F, fontWeight: 600,
-            background: emailStatus === "sent" ? "#DCFCE7" : emailStatus === "sending" ? "#E0F2FE" : "#FEE2E2",
-            color: emailStatus === "sent" ? "#166534" : emailStatus === "sending" ? "#0C4A6E" : "#991B1B",
-          }}>
-            <Mail size={12} style={{ verticalAlign: "middle", marginRight: 6 }} />
-            {emailStatus === "sending" && "Emailing managers..."}
-            {emailStatus === "sent" && "Emailed to managers and salesperson"}
-            {emailStatus === "error" && "Email not configured yet — set up Resend API key in Vercel"}
-          </div>
-        )}
+        {/* Email to managers button */}
+        <button onClick={() => openEmail(l)} style={{
+          width: "100%", padding: "12px 16px", borderRadius: 8, marginBottom: 12,
+          background: "#1E3A5F", color: B.w, border: "none", cursor: "pointer",
+          fontFamily: F, fontSize: 14, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+        }}>
+          <Mail size={16} /> Email to Managers
+        </button>
 
         {/* Walkaround Value Builders — blue scheme */}
         {l.hot.length > 0 && (
