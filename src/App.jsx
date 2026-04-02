@@ -1,11 +1,58 @@
 import { useState, useEffect, useRef } from "react";
-import { Clock, Printer, BarChart3, Send, RotateCcw, CheckCircle2, Star, User, Car, Users, Heart, MapPin, Map, Truck, Compass, Shield, Gauge, Sparkles, Smartphone, Fuel, Sofa, Phone, Mail, Mic, MicOff, Info, TrendingDown } from "lucide-react";
+import { Clock, Printer, BarChart3, Send, RotateCcw, CheckCircle2, Star, User, Car, Users, Heart, MapPin, Map, Truck, Compass, Shield, Gauge, Sparkles, Smartphone, Fuel, Sofa, Mic, MicOff, Info, TrendingDown, Mail } from "lucide-react";
 
 const LOGO = "/logo.png";
 const SAVE_KEY = "fatcc-needs-assessment";
 
 const B = { red: "#C8102E", dk: "#A50D24", blk: "#1A1A1A", dg: "#2D2D2D", lg: "#F5F5F5", w: "#FFF" };
 const F = "'Helvetica Neue',Helvetica,Arial,sans-serif";
+
+/* ── STAFF DIRECTORY ── */
+const SALESPEOPLE = [
+  { name: "Nick Plank", email: "nplank@anderson-auto.net" },
+  { name: "Kojak McKown", email: "pmckown@anderson-auto.net" },
+  { name: "Bailey Hilt", email: "bhilt@anderson-auto.net" },
+  { name: "D'Marcus Anthony", email: "danthony@anderson-auto.net" },
+  { name: "Jody Scharping", email: "jscharping@anderson-auto.net" },
+  { name: "Mario Aguilera", email: "maguilera@anderson-auto.net" },
+  { name: "Will Thermidor", email: "lthermidor@anderson-auto.net" },
+  { name: "Miguel Medina", email: "mmedina@anderson-auto.net" },
+  { name: "Zak Banwart", email: "zbanwart@anderson-auto.net" },
+  { name: "Carlos Tamayo", email: "ctamayo@anderson-auto.net" },
+  { name: "Alain Pino", email: "apino@anderson-auto.net" },
+  { name: "Kelly Floyd", email: "kfloyd@anderson-auto.net" },
+  { name: "Damian Flores", email: "dflores@anderson-auto.net" },
+  { name: "Alex Coolen", email: "acoolen@anderson-auto.net" },
+  { name: "Sean Rowland", email: "srowland@anderson-auto.net" },
+  { name: "Jeff Princile", email: "jprincile@anderson-auto.net" },
+  { name: "Manuel Fernandez Segui", email: "mfernandezsegui@anderson-auto.net" },
+  { name: "Luis Ferrer Jimenez", email: "lferrerjimenez@anderson-auto.net" },
+  { name: "Jayden Hodges", email: "jayden.hodges@anderson-auto.net" },
+  { name: "Louis Mazzaro", email: "lmazzaro@anderson-auto.net" },
+  { name: "Matt Smith", email: "matthew.smith@anderson-auto.net" },
+  { name: "Henry Rosales Guerrero", email: "henry.rosalesguerrero@anderson-auto.net" },
+  { name: "Lazaro Garcia", email: "lazaro.garcia@anderson-auto.net" },
+  { name: "Arlex Lacayo", email: "alacayo@anderson-auto.net" },
+  { name: "Steven Herrera", email: "steven.herrera@anderson-auto.net" },
+  { name: "Christian Odio", email: "christian.odio@anderson-auto.net" },
+  { name: "Jessica Dykstra", email: "jdykstra@anderson-auto.net" },
+  { name: "Renny Ontiveros", email: "ROntiveros@anderson-auto.net" },
+  { name: "Peter Esposito", email: "PEsposito@anderson-auto.net" },
+  { name: "Charles Leigh", email: "cleigh@anderson-auto.net" },
+  { name: "Cody Thompson", email: "cody.thompson@anderson-auto.net" },
+  { name: "Troy Sanchez", email: "tsanchez@anderson-auto.net" },
+];
+
+const MANAGER_EMAILS = [
+  "jpisano@anderson-auto.net",
+  "asanchez@anderson-auto.net",
+  "kdepiano@anderson-auto.net",
+  "mgelsleichter@anderson-auto.net",
+  "kcarter@anderson-auto.net",
+  "gcatalanotto@anderson-auto.net",
+  "blortz@anderson-auto.net",
+  "lreynes@anderson-auto.net",
+];
 
 const LIFE_ITEMS = [
   { label: "Daily Commute", icon: MapPin },
@@ -72,15 +119,44 @@ const getHot = (d) => {
 const defaultData = {
   sp: "", cn: "", stk: "", vy: "", vm: "", vmod: "",
   mot: "",
-  ty: "", tm: "", tmod: "", tmi: "", tlike: "", tdis: "", tneed: "",
+  tv: "", tlike: "", tdis: "",
   tlen: "", tbal: "", tpay: "",
-  rv: "", rl: "", rd: "", rmi: "",
-  life: [], pd: "", ad: "", di: "",
-  mh: "", db: "", nn: "",
-  ph: "", em: "",
+  rv: "", rl: "", rd: "",
+  life: [], pd: "", di: "",
+  mh: "", nn: "",
 };
 
 const sIn = { fontFamily: F, fontSize: 14, padding: "8px 12px", borderRadius: 8, border: "1px solid #ddd", width: "100%", boxSizing: "border-box", outline: "none" };
+
+/* ── EMAIL HTML BUILDER ── */
+const buildEmailHTML = (sub) => {
+  const hotLabels = (sub.hot || []).map(h => walkaroundGuide[h]?.label || h);
+  const r = (label, value) => value ? `<tr><td style="padding:6px 8px;font-weight:600;color:#888;width:130px;vertical-align:top">${label}</td><td style="padding:6px 8px;color:#333">${value}</td></tr>` : "";
+  const section = (title, rows) => {
+    const filtered = rows.filter(Boolean).join("");
+    return filtered ? `<h3 style="color:#C8102E;margin:16px 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:0.5px">${title}</h3><table style="width:100%;border-collapse:collapse">${filtered}</table>` : "";
+  };
+  return `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+    <div style="background:#C8102E;color:white;padding:16px 20px;border-radius:8px 8px 0 0;text-align:center">
+      <h2 style="margin:0;font-size:18px">Discovery Assessment</h2>
+      <p style="margin:6px 0 0;opacity:0.8;font-size:13px">Fred Anderson Toyota of Cape Coral</p>
+    </div>
+    <div style="padding:16px 20px;background:#f5f5f5;border-radius:0 0 8px 8px">
+      <table style="width:100%;border-collapse:collapse">
+        ${r("Customer", sub.cn)}
+        ${r("Salesperson", sub.sp)}
+        ${r("Date", new Date(sub.ts).toLocaleString())}
+      </table>
+      ${(sub.stk || sub.vm || sub.vmod) ? section("Vehicle of Interest", [r("Stock #", sub.stk), r("Vehicle", [sub.vy, sub.vm, sub.vmod].filter(Boolean).join(" "))]) : ""}
+      ${sub.mot ? section("Motivation", [r("", sub.mot)]) : ""}
+      ${sub.hasTrade && sub.tv ? section("Trade-In", [r("Vehicle", sub.tv), r("Loves", sub.tlike), r("Wishes Different", sub.tdis), r("Lender", sub.tlen), r("Balance", sub.tbal), r("Payment", sub.tpay)]) : ""}
+      ${!sub.hasTrade && sub.rv ? section("Recent Vehicle", [r("Driving", sub.rv), r("Liked", sub.rl), r("Didn't Work", sub.rd)]) : ""}
+      ${sub.life?.length > 0 ? `<h3 style="color:#C8102E;margin:16px 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:0.5px">Lifestyle</h3><p style="margin:0;font-size:14px">${sub.life.join(", ")}</p>` : ""}
+      ${hotLabels.length > 0 ? `<h3 style="color:#C8102E;margin:16px 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:0.5px">Walkaround Focus</h3><p style="margin:0;font-size:14px">${hotLabels.join(", ")}</p>` : ""}
+      ${(sub.mh || sub.nn) ? section("Key Notes", [r("Must-Haves", sub.mh), r("Notes", sub.nn)]) : ""}
+      ${(sub.pd || sub.di) ? section("Decision Makers", [r("Primary Driver", sub.pd), r("Influencers", sub.di)]) : ""}
+    </div></div>`;
+};
 
 /* ── VOICE INPUT ── */
 const hasVoice = typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
@@ -210,9 +286,11 @@ const Timer = ({ t0 }) => {
   );
 };
 
-const SumCard = ({ title, children }) => (
+const SumCard = ({ title, subtitle, children }) => (
   <div style={{ background: B.w, borderRadius: 12, padding: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.06)", marginBottom: 12 }}>
-    <h4 style={{ margin: "0 0 10px", fontSize: 12, fontWeight: 700, color: B.red, textTransform: "uppercase", letterSpacing: 0.5, fontFamily: F }}>{title}</h4>
+    <h4 style={{ margin: "0 0 2px", fontSize: 12, fontWeight: 700, color: B.red, textTransform: "uppercase", letterSpacing: 0.5, fontFamily: F }}>{title}</h4>
+    {subtitle && <p style={{ margin: "0 0 8px", fontSize: 11, color: "#888", fontFamily: F, fontStyle: "italic" }}>{subtitle}</p>}
+    {!subtitle && <div style={{ marginBottom: 8 }} />}
     {children}
   </div>
 );
@@ -270,6 +348,7 @@ export default function NeedsAssessment() {
   const [d, setD] = useState(() => saved.current?.data ? { ...defaultData, ...saved.current.data } : { ...defaultData });
   const [resumed, setResumed] = useState(!!saved.current?.data?.cn);
   const [expandedHot, setExpandedHot] = useState({});
+  const [emailStatus, setEmailStatus] = useState(null); // null | "sending" | "sent" | "error"
 
   const s = k => v => setD(p => ({ ...p, [k]: v }));
   const togLife = i => setD(p => ({ ...p, life: p.life.includes(i) ? p.life.filter(x => x !== i) : [...p.life, i] }));
@@ -301,16 +380,38 @@ export default function NeedsAssessment() {
 
   const fields = [
     [d.sp, d.cn], [d.stk, d.vm, d.vmod], [d.mot],
-    hasTrade ? [d.ty, d.tm, d.tmod] : [d.rv, d.rl],
+    hasTrade ? [d.tv] : [d.rv, d.rl],
     [d.life.length > 0 ? "y" : ""], [d.pd],
-    [d.mh], [d.ph, d.em],
+    [d.mh],
   ];
   const pct = Math.round(fields.filter(g => g.some(v => v && v.toString().trim())).length / fields.length * 100);
 
+  /* ── SEND EMAIL ── */
+  const sendEmail = async (submission) => {
+    const spInfo = SALESPEOPLE.find(p => p.name === submission.sp);
+    const recipients = [...MANAGER_EMAILS];
+    if (spInfo) recipients.push(spInfo.email);
+    const html = buildEmailHTML(submission);
+    const subject = `Discovery: ${submission.cn || "Customer"} — ${submission.sp || "Salesperson"}`;
+    try {
+      setEmailStatus("sending");
+      const res = await fetch("/api/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recipients, subject, html }),
+      });
+      setEmailStatus(res.ok ? "sent" : "error");
+    } catch {
+      setEmailStatus("error");
+    }
+  };
+
   const submit = () => {
+    const submission = { ...d, hasTrade, hot, ts: new Date().toISOString(), dur: Math.floor((Date.now() - t0) / 1000) };
     localStorage.removeItem(SAVE_KEY);
-    setSubs(p => [...p, { ...d, hasTrade, hot, ts: new Date().toISOString(), dur: Math.floor((Date.now() - t0) / 1000) }]);
+    setSubs(p => [...p, submission]);
     setView("done");
+    sendEmail(submission);
   };
 
   const startNew = () => {
@@ -320,6 +421,7 @@ export default function NeedsAssessment() {
     setD({ ...defaultData, sp: d.sp });
     setHasTrade(true);
     setExpandedHot({});
+    setEmailStatus(null);
   };
 
   const resetForm = () => {
@@ -345,7 +447,7 @@ export default function NeedsAssessment() {
           <img src={LOGO} alt="Fred Anderson Toyota of Cape Coral" style={{ height: 50, objectFit: "contain" }} />
         </div>
 
-        {/* Customer Header — brand red, NO black */}
+        {/* Customer Header — brand red */}
         <div style={{ background: B.red, borderRadius: 12, padding: 20, marginBottom: 16, textAlign: "center", color: B.w }}>
           <CheckCircle2 size={32} color="#fff" />
           <h2 style={{ margin: "8px 0 4px", fontSize: 20 }}>{l.cn || "Customer"}</h2>
@@ -356,6 +458,20 @@ export default function NeedsAssessment() {
             Salesperson: {l.sp || "\u2014"} &bull; Duration: {dur}
           </p>
         </div>
+
+        {/* Email status */}
+        {emailStatus && (
+          <div style={{
+            padding: "8px 16px", borderRadius: 8, marginBottom: 12, textAlign: "center", fontSize: 12, fontFamily: F, fontWeight: 600,
+            background: emailStatus === "sent" ? "#DCFCE7" : emailStatus === "sending" ? "#E0F2FE" : "#FEE2E2",
+            color: emailStatus === "sent" ? "#166534" : emailStatus === "sending" ? "#0C4A6E" : "#991B1B",
+          }}>
+            <Mail size={12} style={{ verticalAlign: "middle", marginRight: 6 }} />
+            {emailStatus === "sending" && "Emailing managers..."}
+            {emailStatus === "sent" && "Emailed to managers and salesperson"}
+            {emailStatus === "error" && "Email not configured yet — set up Resend API key in Vercel"}
+          </div>
+        )}
 
         {/* Walkaround Value Builders — blue scheme */}
         {l.hot.length > 0 && (
@@ -386,16 +502,15 @@ export default function NeedsAssessment() {
         )}
 
         {/* Trade-In */}
-        {l.hasTrade && (l.ty || l.tm || l.tmod || l.tlen) && (
+        {l.hasTrade && (l.tv || l.ty || l.tlen) && (
           <SumCard title="Trade-In">
-            <SumRow label="Vehicle" value={[l.ty, l.tm, l.tmod].filter(Boolean).join(" ")} />
+            <SumRow label="Vehicle" value={l.tv || [l.ty, l.tm, l.tmod].filter(Boolean).join(" ")} />
             <SumRow label="Miles" value={l.tmi} />
             <SumRow label="Lender" value={l.tlen} />
             <SumRow label="Balance" value={l.tbal} />
             <SumRow label="Payment" value={l.tpay} />
             <SumRow label="Loves" value={l.tlike} />
             <SumRow label="Wishes Different" value={l.tdis} />
-            <SumRow label="Must Have" value={l.tneed} />
           </SumCard>
         )}
 
@@ -405,7 +520,6 @@ export default function NeedsAssessment() {
             <SumRow label="Driving" value={l.rv} />
             <SumRow label="Liked" value={l.rl} />
             <SumRow label="Didn't Work" value={l.rd} />
-            <SumRow label="Was Missing" value={l.rmi} />
           </SumCard>
         )}
 
@@ -428,17 +542,9 @@ export default function NeedsAssessment() {
 
         {/* Key Notes */}
         {(l.mh || l.nn) && (
-          <SumCard title="Key Notes">
+          <SumCard title="Key Notes" subtitle="Copy and paste to DriveCentric">
             <SumRow label="Must-Haves" value={l.mh} />
             <SumRow label="Notes" value={l.nn} />
-          </SumCard>
-        )}
-
-        {/* Contact */}
-        {(l.ph || l.em) && (
-          <SumCard title="Contact">
-            <SumRow label="Phone" value={l.ph} />
-            <SumRow label="Email" value={l.em} />
           </SumCard>
         )}
 
@@ -545,30 +651,30 @@ export default function NeedsAssessment() {
   return (
     <div style={{ fontFamily: F, background: B.lg, minHeight: "100vh" }}>
 
-      {/* LOGO + TIMER — clean white, no black anywhere */}
-      <div style={{ background: B.w, padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #eee" }}>
-        <img src={LOGO} alt="Fred Anderson Toyota of Cape Coral" style={{ height: 40, objectFit: "contain" }} />
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Timer t0={t0} />
-          <button onClick={resetForm} title="Reset form" style={{ background: "none", border: "1.5px solid #ddd", cursor: "pointer", borderRadius: 8, padding: "5px 10px", display: "flex", alignItems: "center", gap: 4 }}>
-            <RotateCcw size={13} color="#888" /><span style={{ color: "#888", fontSize: 11, fontFamily: F, fontWeight: 600 }}>Reset</span>
-          </button>
-          {subs.length > 0 && (
-            <button onClick={() => setView("stats")} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
-              <BarChart3 size={16} color="#aaa" /><span style={{ color: "#aaa", fontSize: 12, fontFamily: F }}>{subs.length}</span>
+      {/* STICKY HEADER: LOGO + TIMER + PROGRESS */}
+      <div style={{ position: "sticky", top: 0, zIndex: 10, background: B.w, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+        <div style={{ padding: "10px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <img src={LOGO} alt="Fred Anderson Toyota of Cape Coral" style={{ height: 36, objectFit: "contain" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <Timer t0={t0} />
+            <button onClick={resetForm} title="Reset form" style={{ background: "none", border: "1.5px solid #ddd", cursor: "pointer", borderRadius: 8, padding: "5px 10px", display: "flex", alignItems: "center", gap: 4 }}>
+              <RotateCcw size={13} color="#888" /><span style={{ color: "#888", fontSize: 11, fontFamily: F, fontWeight: 600 }}>Reset</span>
             </button>
-          )}
+            {subs.length > 0 && (
+              <button onClick={() => setView("stats")} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+                <BarChart3 size={16} color="#aaa" /><span style={{ color: "#aaa", fontSize: 12, fontFamily: F }}>{subs.length}</span>
+              </button>
+            )}
+          </div>
         </div>
-      </div>
-
-      {/* PROGRESS BAR */}
-      <div style={{ background: B.w, padding: "8px 16px", borderBottom: "1px solid #eee", position: "sticky", top: 0, zIndex: 9 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-          <span style={{ fontFamily: F, fontSize: 11, fontWeight: 600, color: B.dg }}>Discovery Progress</span>
-          <span style={{ fontFamily: F, fontSize: 11, color: "#888" }}>{pct}%</span>
-        </div>
-        <div style={{ height: 5, background: "#eee", borderRadius: 3, overflow: "hidden" }}>
-          <div style={{ height: "100%", width: `${pct}%`, background: B.red, borderRadius: 3, transition: "width 0.4s ease" }} />
+        <div style={{ padding: "0 16px 8px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3 }}>
+            <span style={{ fontFamily: F, fontSize: 10, fontWeight: 600, color: B.dg }}>Discovery Progress</span>
+            <span style={{ fontFamily: F, fontSize: 10, color: "#888" }}>{pct}%</span>
+          </div>
+          <div style={{ height: 4, background: "#eee", borderRadius: 3, overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${pct}%`, background: B.red, borderRadius: 3, transition: "width 0.4s ease" }} />
+          </div>
         </div>
       </div>
 
@@ -594,8 +700,14 @@ export default function NeedsAssessment() {
         {/* 1. CUSTOMER INFO */}
         <FadeIn>
           <Sec title="Customer Information" icon={User}>
-            <Fl label="Salesperson"><In value={d.sp} onChange={s("sp")} placeholder="Your name" /></Fl>
-            <Fl label="Customer Name"><In value={d.cn} onChange={s("cn")} placeholder="First and last name" /></Fl>
+            <Fl label="Salesperson">
+              <select style={{ ...sIn, background: B.w }} value={d.sp} onChange={e => s("sp")(e.target.value)}
+                onFocus={e => { e.target.style.borderColor = B.red }} onBlur={e => { e.target.style.borderColor = "#ddd" }}>
+                <option value="">Select your name</option>
+                {SALESPEOPLE.map(p => <option key={p.email} value={p.name}>{p.name}</option>)}
+              </select>
+            </Fl>
+            <Fl label="Customer First Name"><In value={d.cn} onChange={s("cn")} placeholder="First name" /></Fl>
           </Sec>
         </FadeIn>
 
@@ -632,15 +744,9 @@ export default function NeedsAssessment() {
 
           {hasTrade ? (
             <Sec title="Trade Discovery" icon={Car}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12 }}>
-                <Fl label="Year"><In value={d.ty} onChange={s("ty")} placeholder="2019" /></Fl>
-                <Fl label="Make"><In value={d.tm} onChange={s("tm")} placeholder="Honda" /></Fl>
-                <Fl label="Model"><In value={d.tmod} onChange={s("tmod")} placeholder="Accord" /></Fl>
-                <Fl label="Miles"><In value={d.tmi} onChange={s("tmi")} placeholder="45,000" /></Fl>
-              </div>
+              <Fl label="Trade vehicle"><In value={d.tv} onChange={s("tv")} placeholder="Year, Make, Model, Mileage" voice /></Fl>
               <Fl label="What do you LOVE about your current vehicle?"><TA value={d.tlike} onChange={s("tlike")} placeholder="Features, comfort, reliability..." /></Fl>
               <Fl label="What do you WISH was different?"><TA value={d.tdis} onChange={s("tdis")} placeholder="Space, tech, fuel economy..." /></Fl>
-              <Fl label="What does the next vehicle NEED to have?"><TA value={d.tneed} onChange={s("tneed")} placeholder="Must-haves from trade experience..." /></Fl>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
                 <Fl label="Lender"><In value={d.tlen} onChange={s("tlen")} /></Fl>
                 <Fl label="Balance"><In value={d.tbal} onChange={s("tbal")} placeholder="$" /></Fl>
@@ -653,7 +759,6 @@ export default function NeedsAssessment() {
               <Fl label="What have you been driving most recently?"><In value={d.rv} onChange={s("rv")} placeholder="Year, Make, Model" voice /></Fl>
               <Fl label="What did you like about it?"><TA value={d.rl} onChange={s("rl")} placeholder="Features, ride, reliability..." /></Fl>
               <Fl label="What didn't work for you?"><TA value={d.rd} onChange={s("rd")} placeholder="Pain points, frustrations..." /></Fl>
-              <Fl label="What was missing that you wish it had?"><TA value={d.rmi} onChange={s("rmi")} placeholder="Features, space, technology..." /></Fl>
             </Sec>
           )}
         </FadeIn>
@@ -693,16 +798,6 @@ export default function NeedsAssessment() {
           <Sec title="Decision Makers" icon={Users}>
             <Fl label="Who is the primary driver?"><In value={d.pd} onChange={s("pd")} placeholder="Name / relationship" /></Fl>
             <Fl label="Who else is involved in this decision?"><TA value={d.di} onChange={s("di")} placeholder="Spouse, parent, friend, mechanic..." voice={false} /></Fl>
-          </Sec>
-        </FadeIn>
-
-        {/* 8. CONTACT INFO */}
-        <FadeIn>
-          <Sec title="Contact Information" icon={Phone}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-              <Fl label="Phone"><In value={d.ph} onChange={s("ph")} placeholder="(555) 123-4567" /></Fl>
-              <Fl label="Email"><In value={d.em} onChange={s("em")} placeholder="email@example.com" /></Fl>
-            </div>
           </Sec>
         </FadeIn>
 
