@@ -412,6 +412,14 @@ export default function NeedsAssessment() {
     setSubs(p => [...p, submission]);
     setView("done");
     sendEmail(submission);
+    // Save to database
+    fetch("/api/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(submission),
+    }).then(r => {
+      if (!r.ok) r.text().then(t => console.error("Submit API error:", r.status, t));
+    }).catch(err => console.error("Submit fetch error:", err));
   };
 
   const startNew = () => {
