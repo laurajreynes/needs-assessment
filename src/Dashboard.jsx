@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const B = { red: "#C8102E", dk: "#A50D24", blk: "#1A1A1A", w: "#FFF", lg: "#F5F5F5" };
+const B = { red: "#C8102E", dk: "#A50D24", blk: "#1A1A1A", w: "#FFF", lg: "#F5F5F5", grn: "#16a34a", amb: "#d97706" };
 const F = "'Helvetica Neue',Helvetica,Arial,sans-serif";
 
 const walkaroundLabels = {
@@ -9,6 +9,16 @@ const walkaroundLabels = {
   performance: "Performance & Power", style: "Design & Style",
   offroad: "Off-Road Capability", family: "Family Friendly",
 };
+
+const ALL_SALESPEOPLE = [
+  "Nick Plank","Kojak McKown","Bailey Hilt","D'Marcus Anthony","Jody Scharping",
+  "Mario Aguilera","Will Thermidor","Miguel Medina","Zak Banwart","Carlos Tamayo",
+  "Alain Pino","Kelly Floyd","Damian Flores","Alex Coolen","Sean Rowland",
+  "Jeff Princile","Manuel Fernandez Segui","Luis Ferrer Jimenez","Jayden Hodges",
+  "Louis Mazzaro","Matt Smith","Henry Rosales Guerrero","Lazaro Garcia","Arlex Lacayo",
+  "Steven Herrera","Christian Odio","Jessica Dykstra","Renny Ontiveros","Peter Esposito",
+  "Ricardo Navarro","Justin Steffy","Tyler Powell",
+];
 
 const Card = ({ children, style: s }) => (
   <div style={{ background: B.w, borderRadius: 12, padding: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.06)", marginBottom: 16, ...s }}>{children}</div>
@@ -195,30 +205,72 @@ export default function Dashboard() {
       </div>
 
       {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
-        <Stat label="Total Assessments" value={stats.total} />
-        <Stat label="Avg Discovery Time" value={fmt(stats.avg_duration || 0)} />
-        <Stat label="Active Salespeople" value={stats.unique_sp} />
-      </div>
+      {(() => {
+        const spMap = {};
+        bySp.forEach(s => { spMap[s.salesperson] = s; });
+        const submitted = bySp.length;
+        const notSubmitted = ALL_SALESPEOPLE.filter(n => !spMap[n]);
+        const maxCount = bySp.length > 0 ? Math.max(...bySp.map(s => s.count)) : 1;
+        return (<>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
+            <Stat label="Total Assessments" value={stats.total} />
+            <Stat label="Avg Discovery Time" value={fmt(stats.avg_duration || 0)} />
+            <Stat label="Salespeople Active" value={submitted} sub={`of ${ALL_SALESPEOPLE.length}`} />
+            <Stat label="Haven't Submitted" value={notSubmitted.length} sub={notSubmitted.length === 0 ? "Everyone's in!" : "Need follow-up"} />
+          </div>
 
-      {/* By Salesperson */}
-      {bySp.length > 0 && (
-        <Card>
-          <h3 style={{ margin: "0 0 12px", fontSize: 15, color: B.blk }}>By Salesperson</h3>
-          {bySp.map(s => (
-            <div key={s.salesperson} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid #f0f0f0", cursor: "pointer" }}
-              onClick={() => setFilter(filter === s.salesperson ? "" : s.salesperson)}>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: filter === s.salesperson ? B.red : B.blk }}>{s.salesperson}</div>
-                <div style={{ fontSize: 12, color: "#888" }}>{s.count} assessment{s.count !== 1 ? "s" : ""}</div>
+          {/* Salesperson Leaderboard */}
+          <Card>
+            <h3 style={{ margin: "0 0 4px", fontSize: 15, color: B.blk }}>Salesperson Leaderboard</h3>
+            <p style={{ margin: "0 0 14px", fontSize: 12, color: "#888" }}>Ranked by assessments completed</p>
+
+            {bySp.map((s, i) => (
+              <div key={s.salesperson} style={{
+                display: "flex", alignItems: "center", gap: 10, padding: "10px 0",
+                borderBottom: "1px solid #f0f0f0", cursor: "pointer",
+              }} onClick={() => setFilter(filter === s.salesperson ? "" : s.salesperson)}>
+                <span style={{
+                  width: 26, height: 26, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 12, fontWeight: 700, color: B.w, fontFamily: F,
+                  background: i === 0 ? "#FFD700" : i === 1 ? "#C0C0C0" : i === 2 ? "#CD7F32" : "#ddd",
+                  ...(i > 2 ? { color: "#888" } : {}),
+                }}>{i + 1}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: filter === s.salesperson ? B.red : B.blk }}>{s.salesperson}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3 }}>
+                    <div style={{ flex: 1, maxWidth: 180, height: 6, background: "#eee", borderRadius: 3, overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: `${(s.count / maxCount) * 100}%`, background: B.grn, borderRadius: 3 }} />
+                    </div>
+                  </div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: B.blk }}>{s.count}</div>
+                  <div style={{ fontSize: 11, color: "#888" }}>Avg {fmt(s.avg_dur || 0)}</div>
+                </div>
               </div>
-              <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#666" }}>Avg {fmt(s.avg_dur || 0)}</div>
-              </div>
-            </div>
-          ))}
-        </Card>
-      )}
+            ))}
+
+            {notSubmitted.length > 0 && (
+              <>
+                <div style={{ margin: "16px 0 10px", padding: "8px 12px", background: "#FEF3C7", borderRadius: 8, display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 14 }}>&#9888;&#65039;</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: "#92400E" }}>
+                    {notSubmitted.length} salesperson{notSubmitted.length !== 1 ? "s" : ""} with zero submissions
+                  </span>
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+                  {notSubmitted.map(n => (
+                    <span key={n} style={{
+                      background: "#FEE2E2", color: "#991B1B", padding: "4px 12px", borderRadius: 20,
+                      fontSize: 12, fontWeight: 600,
+                    }}>{n}</span>
+                  ))}
+                </div>
+              </>
+            )}
+          </Card>
+        </>);
+      })()}
 
       {/* Top Hot Buttons */}
       {topHot.length > 0 && (
