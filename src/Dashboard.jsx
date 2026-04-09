@@ -1,0 +1,293 @@
+import { useState, useEffect } from "react";
+
+const B = { red: "#C8102E", dk: "#A50D24", blk: "#1A1A1A", w: "#FFF", lg: "#F5F5F5" };
+const F = "'Helvetica Neue',Helvetica,Arial,sans-serif";
+
+const walkaroundLabels = {
+  safety: "Safety Systems", fuel: "Fuel Efficiency", space: "Cargo & Versatility",
+  tech: "Tech & Connectivity", comfort: "Ride & Comfort", towing: "Towing Capability",
+  performance: "Performance & Power", style: "Design & Style",
+  offroad: "Off-Road Capability", family: "Family Friendly",
+};
+
+const Card = ({ children, style: s }) => (
+  <div style={{ background: B.w, borderRadius: 12, padding: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.06)", marginBottom: 16, ...s }}>{children}</div>
+);
+
+const Stat = ({ label, value, sub }) => (
+  <Card style={{ textAlign: "center", padding: 16 }}>
+    <div style={{ fontSize: 32, fontWeight: 700, color: B.red, fontFamily: F }}>{value}</div>
+    <div style={{ fontSize: 12, color: "#888", fontFamily: F, marginTop: 2 }}>{label}</div>
+    {sub && <div style={{ fontSize: 11, color: "#aaa", fontFamily: F, marginTop: 2 }}>{sub}</div>}
+  </Card>
+);
+
+const fmt = (s) => {
+  const m = Math.floor(s / 60), sec = s % 60;
+  return `${m}:${String(sec).padStart(2, "0")}`;
+};
+
+export default function Dashboard() {
+  const [pin, setPin] = useState("");
+  const [authed, setAuthed] = useState(false);
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [selected, setSelected] = useState(null);
+  const [filter, setFilter] = useState("");
+
+  const load = async (p) => {
+    setLoading(true);
+    setErr(null);
+    try {
+      const res = await fetch("/api/dashboard", { headers: { "x-pin": p } });
+      if (!res.ok) throw new Error(res.status === 401 ? "Invalid PIN" : "Failed to load");
+      const json = await res.json();
+      setData(json);
+      setAuthed(true);
+    } catch (e) {
+      setErr(e.message);
+    }
+    setLoading(false);
+  };
+
+  const handlePin = (e) => {
+    e.preventDefault();
+    load(pin);
+  };
+
+  // Auto-refresh every 30s
+  useEffect(() => {
+    if (!authed) return;
+    const i = setInterval(() => load(pin), 30000);
+    return () => clearInterval(i);
+  }, [authed, pin]);
+
+  if (!authed) {
+    return (
+      <div style={{ fontFamily: F, display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: B.lg }}>
+        <form onSubmit={handlePin} style={{ background: B.w, padding: 40, borderRadius: 16, boxShadow: "0 4px 20px rgba(0,0,0,0.1)", textAlign: "center", maxWidth: 360 }}>
+          <div style={{ background: B.red, width: 50, height: 50, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+            <span style={{ color: B.w, fontSize: 24 }}>&#128202;</span>
+          </div>
+          <h2 style={{ margin: "0 0 8px", color: B.blk, fontSize: 20 }}>Manager Dashboard</h2>
+          <p style={{ margin: "0 0 20px", color: "#888", fontSize: 13 }}>Fred Anderson Toyota of Cape Coral</p>
+          <input
+            type="password" value={pin} onChange={e => setPin(e.target.value)}
+            placeholder="Enter PIN"
+            style={{ fontFamily: F, fontSize: 24, textAlign: "center", padding: "12px 16px", borderRadius: 8, border: "1px solid #ddd", width: "100%", boxSizing: "border-box", letterSpacing: 8, outline: "none" }}
+            autoFocus
+          />
+          <button type="submit" disabled={loading} style={{
+            fontFamily: F, fontSize: 14, fontWeight: 700, padding: "12px 24px", borderRadius: 8,
+            background: B.red, color: B.w, border: "none", cursor: "pointer", width: "100%", marginTop: 12,
+          }}>
+            {loading ? "Loading..." : "View Dashboard"}
+          </button>
+          {err && <p style={{ color: "#ef4444", fontSize: 13, marginTop: 12 }}>{err}</p>}
+        </form>
+      </div>
+    );
+  }
+
+  const { submissions, stats, bySp, byDay } = data;
+
+  // Hot button frequency across all submissions
+  const hotCounts = {};
+  submissions.forEach(s => {
+    (s.hot_buttons || []).forEach(h => { hotCounts[h] = (hotCounts[h] || 0) + 1; });
+  });
+  const topHot = Object.entries(hotCounts).sort((a, b) => b[1] - a[1]).slice(0, 8);
+
+  // Filtered submissions
+  const filtered = filter
+    ? submissions.filter(s => s.salesperson?.toLowerCase().includes(filter.toLowerCase()))
+    : submissions;
+
+  // Detail view
+  if (selected) {
+    const s = selected;
+    const Row = ({ label, value }) => value ? (
+      <div style={{ display: "flex", gap: 8, marginBottom: 6, fontSize: 14, fontFamily: F }}>
+        <span style={{ color: "#888", minWidth: 120, fontWeight: 600 }}>{label}</span>
+        <span style={{ color: "#333", flex: 1 }}>{value}</span>
+      </div>
+    ) : null;
+    return (
+      <div style={{ fontFamily: F, maxWidth: 700, margin: "0 auto", padding: 20, background: B.lg, minHeight: "100vh" }}>
+        <button onClick={() => setSelected(null)} style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: B.red, background: "none", border: "none", cursor: "pointer", marginBottom: 16 }}>&larr; Back to Dashboard</button>
+        <Card>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+            <div>
+              <h2 style={{ margin: 0, fontSize: 20, color: B.blk }}>{s.customer || "Customer"}</h2>
+              <p style={{ margin: "4px 0 0", fontSize: 13, color: "#888" }}>{s.salesperson} &bull; {new Date(s.submitted_at).toLocaleString()}</p>
+            </div>
+            <span style={{ background: B.red, color: B.w, padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600 }}>{fmt(s.duration)}</span>
+          </div>
+          {s.stock && <Row label="Stock #" value={s.stock} />}
+          <Row label="Vehicle" value={[s.vehicle_year, s.vehicle_make, s.vehicle_model].filter(Boolean).join(" ")} />
+          <Row label="Motivation" value={s.motivation} />
+        </Card>
+        {s.has_trade && s.trade_vehicle && (
+          <Card>
+            <h4 style={{ margin: "0 0 10px", fontSize: 12, fontWeight: 700, color: B.red, textTransform: "uppercase" }}>Trade-In</h4>
+            <Row label="Vehicle" value={s.trade_vehicle} />
+            <Row label="Loves" value={s.trade_like} />
+            <Row label="Wishes Different" value={s.trade_dislike} />
+            <Row label="Lender" value={s.trade_lender} />
+            <Row label="Balance" value={s.trade_balance} />
+            <Row label="Payment" value={s.trade_payment} />
+          </Card>
+        )}
+        {!s.has_trade && s.recent_vehicle && (
+          <Card>
+            <h4 style={{ margin: "0 0 10px", fontSize: 12, fontWeight: 700, color: B.red, textTransform: "uppercase" }}>Recent Vehicle</h4>
+            <Row label="Driving" value={s.recent_vehicle} />
+            <Row label="Liked" value={s.recent_like} />
+            <Row label="Didn't Work" value={s.recent_dislike} />
+          </Card>
+        )}
+        {s.lifestyle?.length > 0 && (
+          <Card>
+            <h4 style={{ margin: "0 0 10px", fontSize: 12, fontWeight: 700, color: B.red, textTransform: "uppercase" }}>Lifestyle</h4>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {s.lifestyle.map(l => <span key={l} style={{ background: "#F0F0F0", padding: "4px 12px", borderRadius: 12, fontSize: 12, fontWeight: 600, color: "#555" }}>{l}</span>)}
+            </div>
+          </Card>
+        )}
+        {s.hot_buttons?.length > 0 && (
+          <Card style={{ background: "#F0F7FF", border: "1.5px solid #BFDBFE" }}>
+            <h4 style={{ margin: "0 0 10px", fontSize: 12, fontWeight: 700, color: "#1E3A5F", textTransform: "uppercase" }}>Walkaround Focus</h4>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {s.hot_buttons.map(h => <span key={h} style={{ background: B.red, color: B.w, padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600 }}>{walkaroundLabels[h] || h}</span>)}
+            </div>
+          </Card>
+        )}
+        {(s.must_haves || s.notes) && (
+          <Card>
+            <h4 style={{ margin: "0 0 10px", fontSize: 12, fontWeight: 700, color: B.red, textTransform: "uppercase" }}>Key Notes</h4>
+            <Row label="Must-Haves" value={s.must_haves} />
+            <Row label="Notes" value={s.notes} />
+          </Card>
+        )}
+        {(s.primary_driver || s.decision_influencers) && (
+          <Card>
+            <h4 style={{ margin: "0 0 10px", fontSize: 12, fontWeight: 700, color: B.red, textTransform: "uppercase" }}>Decision Makers</h4>
+            <Row label="Primary Driver" value={s.primary_driver} />
+            <Row label="Influencers" value={s.decision_influencers} />
+          </Card>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ fontFamily: F, maxWidth: 900, margin: "0 auto", padding: 20, background: B.lg, minHeight: "100vh" }}>
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: 22, color: B.blk }}>Manager Dashboard</h1>
+          <p style={{ margin: "4px 0 0", fontSize: 13, color: "#888" }}>Fred Anderson Toyota of Cape Coral</p>
+        </div>
+        <button onClick={() => load(pin)} style={{ fontFamily: F, fontSize: 12, fontWeight: 600, color: "#888", background: "#f0f0f0", border: "none", borderRadius: 8, padding: "6px 12px", cursor: "pointer" }}>
+          Refresh
+        </button>
+      </div>
+
+      {/* Stats */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
+        <Stat label="Total Assessments" value={stats.total} />
+        <Stat label="Avg Discovery Time" value={fmt(stats.avg_duration || 0)} />
+        <Stat label="Active Salespeople" value={stats.unique_sp} />
+      </div>
+
+      {/* By Salesperson */}
+      {bySp.length > 0 && (
+        <Card>
+          <h3 style={{ margin: "0 0 12px", fontSize: 15, color: B.blk }}>By Salesperson</h3>
+          {bySp.map(s => (
+            <div key={s.salesperson} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid #f0f0f0", cursor: "pointer" }}
+              onClick={() => setFilter(filter === s.salesperson ? "" : s.salesperson)}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: filter === s.salesperson ? B.red : B.blk }}>{s.salesperson}</div>
+                <div style={{ fontSize: 12, color: "#888" }}>{s.count} assessment{s.count !== 1 ? "s" : ""}</div>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#666" }}>Avg {fmt(s.avg_dur || 0)}</div>
+              </div>
+            </div>
+          ))}
+        </Card>
+      )}
+
+      {/* Top Hot Buttons */}
+      {topHot.length > 0 && (
+        <Card>
+          <h3 style={{ margin: "0 0 12px", fontSize: 15, color: B.blk }}>Top Walkaround Focus Areas</h3>
+          {topHot.map(([key, count]) => (
+            <div key={key} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <div style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>{walkaroundLabels[key] || key}</div>
+              <div style={{ width: 140, height: 8, background: "#eee", borderRadius: 4, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${(count / stats.total) * 100}%`, background: B.red, borderRadius: 4 }} />
+              </div>
+              <span style={{ fontSize: 12, color: "#888", minWidth: 30, textAlign: "right" }}>{count}</span>
+            </div>
+          ))}
+        </Card>
+      )}
+
+      {/* Daily Activity */}
+      {byDay.length > 0 && (
+        <Card>
+          <h3 style={{ margin: "0 0 12px", fontSize: 15, color: B.blk }}>Daily Activity</h3>
+          {byDay.slice(0, 14).map(d => (
+            <div key={d.day} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+              <span style={{ fontSize: 12, color: "#888", minWidth: 90, fontFamily: F }}>{new Date(d.day).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</span>
+              <div style={{ flex: 1, height: 8, background: "#eee", borderRadius: 4, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${(d.count / Math.max(...byDay.map(x => x.count))) * 100}%`, background: B.red, borderRadius: 4 }} />
+              </div>
+              <span style={{ fontSize: 12, color: "#888", minWidth: 20, textAlign: "right" }}>{d.count}</span>
+            </div>
+          ))}
+        </Card>
+      )}
+
+      {/* Recent Submissions */}
+      <Card>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <h3 style={{ margin: 0, fontSize: 15, color: B.blk }}>
+            {filter ? `${filter}'s Assessments` : "Recent Assessments"}
+          </h3>
+          {filter && (
+            <button onClick={() => setFilter("")} style={{ fontFamily: F, fontSize: 11, color: B.red, background: "none", border: `1px solid ${B.red}`, borderRadius: 6, padding: "3px 10px", cursor: "pointer" }}>
+              Clear Filter
+            </button>
+          )}
+        </div>
+        {filtered.length === 0 && <p style={{ fontSize: 13, color: "#888" }}>No assessments yet.</p>}
+        {filtered.slice(0, 50).map(s => (
+          <div key={s.id} onClick={() => setSelected(s)} style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0",
+            borderBottom: "1px solid #f0f0f0", cursor: "pointer",
+          }}>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: B.blk }}>{s.customer || "\u2014"}</div>
+              <div style={{ fontSize: 12, color: "#888" }}>
+                {s.salesperson} &bull; {new Date(s.submitted_at).toLocaleString()}
+                {s.stock ? ` \u2022 #${s.stock}` : ""}
+              </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {s.hot_buttons?.length > 0 && (
+                <span style={{ fontSize: 11, color: "#1E3A5F", background: "#E0F2FE", padding: "2px 8px", borderRadius: 10 }}>
+                  {s.hot_buttons.length} focus
+                </span>
+              )}
+              <span style={{ fontSize: 12, color: "#666", fontWeight: 600 }}>{fmt(s.duration)}</span>
+            </div>
+          </div>
+        ))}
+      </Card>
+    </div>
+  );
+}
