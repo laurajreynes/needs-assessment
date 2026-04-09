@@ -1,6 +1,7 @@
-import { sql } from "@vercel/postgres";
+import { neon } from "@neondatabase/serverless";
 
 export default async function handler(req, res) {
+  const sql = neon(process.env.DATABASE_URL || process.env.POSTGRES_URL);
   try {
     await sql`
       CREATE TABLE IF NOT EXISTS submissions (

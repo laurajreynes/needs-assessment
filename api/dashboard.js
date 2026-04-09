@@ -1,4 +1,4 @@
-import { sql } from "@vercel/postgres";
+import { neon } from "@neondatabase/serverless";
 
 export default async function handler(req, res) {
   const pin = req.headers["x-pin"] || req.query.pin;
@@ -6,12 +6,13 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: "Invalid PIN" });
   }
 
+  const sql = neon(process.env.DATABASE_URL || process.env.POSTGRES_URL);
   try {
-    const { rows: submissions } = await sql`
+    const submissions = await sql`
       SELECT * FROM submissions ORDER BY submitted_at DESC LIMIT 200
     `;
 
-    const { rows: stats } = await sql`
+    const stats = await sql`
       SELECT
         COUNT(*)::int AS total,
         ROUND(AVG(duration))::int AS avg_duration,
@@ -19,7 +20,7 @@ export default async function handler(req, res) {
       FROM submissions
     `;
 
-    const { rows: bySp } = await sql`
+    const bySp = await sql`
       SELECT
         salesperson,
         COUNT(*)::int AS count,
@@ -30,7 +31,7 @@ export default async function handler(req, res) {
       ORDER BY count DESC
     `;
 
-    const { rows: byDay } = await sql`
+    const byDay = await sql`
       SELECT
         DATE(submitted_at) AS day,
         COUNT(*)::int AS count

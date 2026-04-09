@@ -1,8 +1,9 @@
-import { sql } from "@vercel/postgres";
+import { neon } from "@neondatabase/serverless";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
+  const sql = neon(process.env.DATABASE_URL || process.env.POSTGRES_URL);
   const d = req.body;
   try {
     await sql`
