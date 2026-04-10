@@ -3,6 +3,10 @@ import { neon } from "@neondatabase/serverless";
 export default async function handler(req, res) {
   const sql = neon(process.env.DATABASE_URL || process.env.POSTGRES_URL);
   try {
+    // If ?reset=true, wipe and recreate
+    if (req.query.reset === "true") {
+      await sql`DROP TABLE IF EXISTS submissions`;
+    }
     await sql`
       CREATE TABLE IF NOT EXISTS submissions (
         id SERIAL PRIMARY KEY,
