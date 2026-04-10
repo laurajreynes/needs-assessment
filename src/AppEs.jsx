@@ -808,9 +808,6 @@ export default function NeedsAssessment() {
             <Fl label={hasVOI ? "Ademas de este vehiculo, cuales son tus requisitos indispensables?" : "Cuales son los requisitos indispensables para tu proximo vehiculo?"}>
               <TA value={d.mh} onChange={s("mh")} placeholder={hasVOI ? "Algo que este vehiculo DEBE tener para ser el indicado?" : "Funciones, tamano, tipo, preferencia de marca..."} />
             </Fl>
-            <Fl label={hasVOI ? "Alguna preocupacion sobre este vehiculo?" : "Alguna otra nota?"}>
-              <TA value={d.nn} onChange={s("nn")} placeholder={hasVOI ? "Dudas, preguntas, cosas por resolver..." : "Preferencias de color, nuevo vs usado, modelos especificos..."} />
-            </Fl>
           </Sec>
         </FadeIn>
 
