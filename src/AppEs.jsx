@@ -748,8 +748,8 @@ export default function NeedsAssessment() {
         {/* 3. MOTIVACION */}
         <FadeIn>
           <Sec title="Motivacion" icon={Heart}>
-            <Fl label={hasVOI ? "Que les atrajo de este vehiculo en especifico?" : "Que los trae a buscar un vehiculo hoy?"} hint="Los clientes no compran vehiculos. Compran soluciones a sus problemas.">
-              <TA value={d.mot} onChange={s("mot")} placeholder={hasVOI ? "Que les llamo la atencion? En linea? Pasaron por aqui? Referidos?" : "Que cambio? Nuevo trabajo, familia creciendo, problemas de confiabilidad?"} rows={3} />
+            <Fl label={hasVOI ? "Por que este vehiculo? Que los trajo hoy?" : "Que los trae hoy?"} hint="El POR QUE — que cambio en su vida que los trae aqui?">
+              <TA value={d.mot} onChange={s("mot")} placeholder={hasVOI ? "Lo vieron en linea? Referidos? Que problema les resuelve?" : "Nuevo trabajo, familia creciendo, fin de contrato, carro se daño..."} rows={3} />
             </Fl>
           </Sec>
         </FadeIn>
@@ -805,8 +805,8 @@ export default function NeedsAssessment() {
                 <p style={{ fontFamily: F, fontSize: 12, color: "#0C4A6E", margin: 0 }}>Tienen un vehiculo en mente — confirma que sea el adecuado y descubre posibles objeciones.</p>
               </div>
             )}
-            <Fl label={hasVOI ? "Ademas de este vehiculo, cuales son tus requisitos indispensables?" : "Cuales son los requisitos indispensables para tu proximo vehiculo?"}>
-              <TA value={d.mh} onChange={s("mh")} placeholder={hasVOI ? "Algo que este vehiculo DEBE tener para ser el indicado?" : "Funciones, tamano, tipo, preferencia de marca..."} />
+            <Fl label={hasVOI ? "Que debe tener este vehiculo para ser el indicado?" : "Que debe tener el proximo vehiculo?"} hint="El QUE — funciones, especificaciones, lo no negociable.">
+              <TA value={d.mh} onChange={s("mh")} placeholder={hasVOI ? "Tercera fila? AWD? Menos de $500/mes? Que es indispensable?" : "Tercera fila, AWD, economia de combustible, presupuesto..."} />
             </Fl>
           </Sec>
         </FadeIn>

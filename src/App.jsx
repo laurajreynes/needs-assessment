@@ -748,8 +748,8 @@ export default function NeedsAssessment() {
         {/* 3. MOTIVATION */}
         <FadeIn>
           <Sec title="Motivation" icon={Heart}>
-            <Fl label={hasVOI ? "What drew them to this specific vehicle?" : "What has you looking for a vehicle today?"} hint="Customers don't buy vehicles. They buy solutions to problems.">
-              <TA value={d.mot} onChange={s("mot")} placeholder={hasVOI ? "What caught their eye? Online? Drive by? Referred?" : "What's changed? New job, growing family, reliability issues?"} rows={3} />
+            <Fl label={hasVOI ? "Why this vehicle? What brought them in today?" : "What's bringing them in today?"} hint="The WHY — what changed in their life that's driving this visit?">
+              <TA value={d.mot} onChange={s("mot")} placeholder={hasVOI ? "Saw it online? Referred? What problem does it solve?" : "New job, growing family, lease ending, car broke down..."} rows={3} />
             </Fl>
           </Sec>
         </FadeIn>
@@ -805,8 +805,8 @@ export default function NeedsAssessment() {
                 <p style={{ fontFamily: F, fontSize: 12, color: "#0C4A6E", margin: 0 }}>They have a vehicle in mind — confirm fit and uncover any deal-breakers.</p>
               </div>
             )}
-            <Fl label={hasVOI ? "Beyond this vehicle, what are your absolute must-haves?" : "What are the must-haves for your next vehicle?"}>
-              <TA value={d.mh} onChange={s("mh")} placeholder={hasVOI ? "Anything this vehicle MUST have to be the one?" : "Features, size, type, brand preferences..."} />
+            <Fl label={hasVOI ? "What does this vehicle need to have to be the one?" : "What does the next vehicle need to have?"} hint="The WHAT — features, specs, deal-breakers.">
+              <TA value={d.mh} onChange={s("mh")} placeholder={hasVOI ? "Third row? AWD? Under $500/mo? What's non-negotiable?" : "Third row, AWD, fuel economy, budget, towing..."} />
             </Fl>
           </Sec>
         </FadeIn>
