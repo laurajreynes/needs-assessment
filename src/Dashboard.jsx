@@ -90,8 +90,6 @@ const downloadCSV = (rows) => {
 };
 
 export default function Dashboard() {
-  const [pin, setPin] = useState("");
-  const [authed, setAuthed] = useState(false);
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -99,52 +97,34 @@ export default function Dashboard() {
   const [filter, setFilter] = useState("");
   const [period, setPeriod] = useState("today");
 
-  const load = async (p) => {
+  const load = async () => {
     setLoading(true);
     setErr(null);
     try {
-      const res = await fetch("/api/dashboard", { headers: { "x-pin": p } });
-      if (!res.ok) throw new Error(res.status === 401 ? "Invalid PIN" : "Failed to load");
+      const res = await fetch("/api/dashboard");
+      if (!res.ok) throw new Error("Failed to load");
       const json = await res.json();
       setData(json);
-      setAuthed(true);
     } catch (e) {
       setErr(e.message);
     }
     setLoading(false);
   };
 
-  const handlePin = (e) => { e.preventDefault(); load(pin); };
-
+  // Load on mount + auto-refresh every 30s
   useEffect(() => {
-    if (!authed) return;
-    const i = setInterval(() => load(pin), 30000);
+    load();
+    const i = setInterval(load, 30000);
     return () => clearInterval(i);
-  }, [authed, pin]);
+  }, []);
 
-  if (!authed) {
+  if (!data) {
     return (
       <div style={{ fontFamily: F, display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: B.lg }}>
-        <form onSubmit={handlePin} style={{ background: B.w, padding: 40, borderRadius: 16, boxShadow: "0 4px 20px rgba(0,0,0,0.1)", textAlign: "center", maxWidth: 360 }}>
-          <div style={{ background: B.red, width: 50, height: 50, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-            <span style={{ color: B.w, fontSize: 24 }}>&#128202;</span>
-          </div>
-          <h2 style={{ margin: "0 0 8px", color: B.blk, fontSize: 20 }}>Manager Dashboard</h2>
-          <p style={{ margin: "0 0 20px", color: "#888", fontSize: 13 }}>Fred Anderson Toyota of Cape Coral</p>
-          <input
-            type="password" value={pin} onChange={e => setPin(e.target.value)}
-            placeholder="Enter PIN"
-            style={{ fontFamily: F, fontSize: 24, textAlign: "center", padding: "12px 16px", borderRadius: 8, border: "1px solid #ddd", width: "100%", boxSizing: "border-box", letterSpacing: 8, outline: "none" }}
-            autoFocus
-          />
-          <button type="submit" disabled={loading} style={{
-            fontFamily: F, fontSize: 14, fontWeight: 700, padding: "12px 24px", borderRadius: 8,
-            background: B.red, color: B.w, border: "none", cursor: "pointer", width: "100%", marginTop: 12,
-          }}>
-            {loading ? "Loading..." : "View Dashboard"}
-          </button>
-          {err && <p style={{ color: "#ef4444", fontSize: 13, marginTop: 12 }}>{err}</p>}
-        </form>
+        <div style={{ textAlign: "center" }}>
+          {loading && <p style={{ color: "#888", fontSize: 14 }}>Loading dashboard...</p>}
+          {err && <p style={{ color: "#ef4444", fontSize: 14 }}>{err}</p>}
+        </div>
       </div>
     );
   }
@@ -278,7 +258,7 @@ export default function Dashboard() {
           }}>
             Download CSV
           </button>
-          <button onClick={() => load(pin)} style={{
+          <button onClick={load} style={{
             fontFamily: F, fontSize: 12, fontWeight: 600, color: "#888", background: "#f0f0f0",
             border: "none", borderRadius: 8, padding: "6px 12px", cursor: "pointer",
           }}>

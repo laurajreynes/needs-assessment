@@ -1,11 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 
 export default async function handler(req, res) {
-  const pin = req.headers["x-pin"] || req.query.pin;
-  if (pin !== (process.env.DASHBOARD_PIN || "2026")) {
-    return res.status(401).json({ error: "Invalid PIN" });
-  }
-
   const sql = neon(process.env.DATABASE_URL || process.env.POSTGRES_URL);
   try {
     const submissions = await sql`
