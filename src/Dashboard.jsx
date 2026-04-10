@@ -26,15 +26,67 @@ const Card = ({ children, style: s }) => (
 
 const Stat = ({ label, value, sub }) => (
   <Card style={{ textAlign: "center", padding: 16 }}>
-    <div style={{ fontSize: 32, fontWeight: 700, color: B.red, fontFamily: F }}>{value}</div>
-    <div style={{ fontSize: 12, color: "#888", fontFamily: F, marginTop: 2 }}>{label}</div>
+    <div style={{ fontSize: 28, fontWeight: 700, color: B.red, fontFamily: F }}>{value}</div>
+    <div style={{ fontSize: 11, color: "#888", fontFamily: F, marginTop: 2 }}>{label}</div>
     {sub && <div style={{ fontSize: 11, color: "#aaa", fontFamily: F, marginTop: 2 }}>{sub}</div>}
   </Card>
 );
 
 const fmt = (s) => {
+  if (!s && s !== 0) return "—";
   const m = Math.floor(s / 60), sec = s % 60;
   return `${m}:${String(sec).padStart(2, "0")}`;
+};
+
+/* ── Date helpers ── */
+const startOfDay = (d) => { const x = new Date(d); x.setHours(0,0,0,0); return x; };
+const getMonday = (d) => {
+  const x = new Date(d); x.setHours(0,0,0,0);
+  const day = x.getDay(); const diff = x.getDate() - day + (day === 0 ? -6 : 1);
+  x.setDate(diff); return x;
+};
+const startOfMonth = (d) => { const x = new Date(d); x.setHours(0,0,0,0); x.setDate(1); return x; };
+
+const PERIODS = [
+  { key: "today", label: "Today", fn: () => startOfDay(new Date()) },
+  { key: "wtd", label: "Week to Date", fn: () => getMonday(new Date()) },
+  { key: "mtd", label: "Month to Date", fn: () => startOfMonth(new Date()) },
+  { key: "all", label: "All Time", fn: () => new Date(0) },
+];
+
+/* ── CSV Export ── */
+const downloadCSV = (rows) => {
+  if (!rows.length) return;
+  const headers = [
+    "Date","Salesperson","Customer","Stock","Vehicle Year","Vehicle Make","Vehicle Model",
+    "Motivation","Has Trade","Trade Vehicle","Trade Likes","Trade Dislikes",
+    "Trade Lender","Trade Balance","Trade Payment",
+    "Recent Vehicle","Recent Likes","Recent Dislikes",
+    "Lifestyle","Walkaround Focus","Primary Driver","Decision Influencers",
+    "Must Haves","Notes","Duration (sec)"
+  ];
+  const esc = (v) => {
+    if (v == null) return "";
+    const s = Array.isArray(v) ? v.join(", ") : String(v);
+    return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const lines = [headers.join(",")];
+  rows.forEach(r => {
+    lines.push([
+      new Date(r.submitted_at).toLocaleDateString(), r.salesperson, r.customer, r.stock,
+      r.vehicle_year, r.vehicle_make, r.vehicle_model,
+      r.motivation, r.has_trade ? "Yes" : "No", r.trade_vehicle, r.trade_like, r.trade_dislike,
+      r.trade_lender, r.trade_balance, r.trade_payment,
+      r.recent_vehicle, r.recent_like, r.recent_dislike,
+      r.lifestyle, r.hot_buttons?.map(h => walkaroundLabels[h] || h), r.primary_driver, r.decision_influencers,
+      r.must_haves, r.notes, r.duration,
+    ].map(esc).join(","));
+  });
+  const blob = new Blob([lines.join("\n")], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url;
+  a.download = `discovery-assessments-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(url);
 };
 
 export default function Dashboard() {
@@ -45,6 +97,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState(null);
   const [filter, setFilter] = useState("");
+  const [period, setPeriod] = useState("today");
 
   const load = async (p) => {
     setLoading(true);
@@ -61,12 +114,8 @@ export default function Dashboard() {
     setLoading(false);
   };
 
-  const handlePin = (e) => {
-    e.preventDefault();
-    load(pin);
-  };
+  const handlePin = (e) => { e.preventDefault(); load(pin); };
 
-  // Auto-refresh every 30s
   useEffect(() => {
     if (!authed) return;
     const i = setInterval(() => load(pin), 30000);
@@ -100,21 +149,44 @@ export default function Dashboard() {
     );
   }
 
-  const { submissions, stats, bySp, byDay } = data;
+  const { submissions: allSubs, stats: allStats, bySp: allBySp, byDay } = data;
 
-  // Hot button frequency across all submissions
+  /* ── Filter by time period ── */
+  const cutoff = PERIODS.find(p => p.key === period).fn();
+  const submissions = allSubs.filter(s => new Date(s.submitted_at) >= cutoff);
+
+  /* ── Compute stats for filtered period ── */
+  const total = submissions.length;
+  const avgDur = total > 0 ? Math.round(submissions.reduce((a, s) => a + (s.duration || 0), 0) / total) : 0;
+
+  const spMap = {};
+  submissions.forEach(s => {
+    if (!s.salesperson) return;
+    if (!spMap[s.salesperson]) spMap[s.salesperson] = { count: 0, totalDur: 0 };
+    spMap[s.salesperson].count++;
+    spMap[s.salesperson].totalDur += s.duration || 0;
+  });
+  const bySp = Object.entries(spMap)
+    .map(([name, d]) => ({ salesperson: name, count: d.count, avg_dur: Math.round(d.totalDur / d.count) }))
+    .sort((a, b) => b.count - a.count);
+
+  const activeSp = bySp.length;
+  const notSubmitted = ALL_SALESPEOPLE.filter(n => !spMap[n]);
+  const maxCount = bySp.length > 0 ? Math.max(...bySp.map(s => s.count)) : 1;
+
+  // Hot buttons for period
   const hotCounts = {};
   submissions.forEach(s => {
     (s.hot_buttons || []).forEach(h => { hotCounts[h] = (hotCounts[h] || 0) + 1; });
   });
   const topHot = Object.entries(hotCounts).sort((a, b) => b[1] - a[1]).slice(0, 8);
 
-  // Filtered submissions
+  // Filtered by salesperson
   const filtered = filter
     ? submissions.filter(s => s.salesperson?.toLowerCase().includes(filter.toLowerCase()))
     : submissions;
 
-  // Detail view
+  /* ── Detail view ── */
   if (selected) {
     const s = selected;
     const Row = ({ label, value }) => value ? (
@@ -194,83 +266,104 @@ export default function Dashboard() {
   return (
     <div style={{ fontFamily: F, maxWidth: 900, margin: "0 auto", padding: 20, background: B.lg, minHeight: "100vh" }}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 22, color: B.blk }}>Manager Dashboard</h1>
           <p style={{ margin: "4px 0 0", fontSize: 13, color: "#888" }}>Fred Anderson Toyota of Cape Coral</p>
         </div>
-        <button onClick={() => load(pin)} style={{ fontFamily: F, fontSize: 12, fontWeight: 600, color: "#888", background: "#f0f0f0", border: "none", borderRadius: 8, padding: "6px 12px", cursor: "pointer" }}>
-          Refresh
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => downloadCSV(filtered)} style={{
+            fontFamily: F, fontSize: 12, fontWeight: 600, color: B.w, background: B.red,
+            border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer",
+          }}>
+            Download CSV
+          </button>
+          <button onClick={() => load(pin)} style={{
+            fontFamily: F, fontSize: 12, fontWeight: 600, color: "#888", background: "#f0f0f0",
+            border: "none", borderRadius: 8, padding: "6px 12px", cursor: "pointer",
+          }}>
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      {/* Period Tabs */}
+      <div style={{ display: "flex", gap: 4, marginBottom: 16, background: B.w, borderRadius: 10, padding: 4, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+        {PERIODS.map(p => (
+          <button key={p.key} onClick={() => setPeriod(p.key)} style={{
+            fontFamily: F, fontSize: 13, fontWeight: 600, flex: 1, padding: "10px 8px",
+            borderRadius: 8, border: "none", cursor: "pointer",
+            background: period === p.key ? B.red : "transparent",
+            color: period === p.key ? B.w : "#888",
+            transition: "all 0.15s",
+          }}>
+            {p.label}
+          </button>
+        ))}
       </div>
 
       {/* Stats */}
-      {(() => {
-        const spMap = {};
-        bySp.forEach(s => { spMap[s.salesperson] = s; });
-        const submitted = bySp.length;
-        const notSubmitted = ALL_SALESPEOPLE.filter(n => !spMap[n]);
-        const maxCount = bySp.length > 0 ? Math.max(...bySp.map(s => s.count)) : 1;
-        return (<>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
-            <Stat label="Total Assessments" value={stats.total} />
-            <Stat label="Avg Discovery Time" value={fmt(stats.avg_duration || 0)} />
-            <Stat label="Salespeople Active" value={submitted} sub={`of ${ALL_SALESPEOPLE.length}`} />
-            <Stat label="Haven't Submitted" value={notSubmitted.length} sub={notSubmitted.length === 0 ? "Everyone's in!" : "Need follow-up"} />
-          </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
+        <Stat label="Assessments" value={total} sub={period !== "all" ? `${allStats.total} all time` : undefined} />
+        <Stat label="Avg Discovery" value={fmt(avgDur)} />
+        <Stat label="Active Salespeople" value={activeSp} sub={`of ${ALL_SALESPEOPLE.length}`} />
+        <Stat label="Haven't Submitted" value={notSubmitted.length} sub={notSubmitted.length === 0 ? "Everyone's in!" : "Need follow-up"} />
+      </div>
 
-          {/* Salesperson Leaderboard */}
-          <Card>
-            <h3 style={{ margin: "0 0 4px", fontSize: 15, color: B.blk }}>Salesperson Leaderboard</h3>
-            <p style={{ margin: "0 0 14px", fontSize: 12, color: "#888" }}>Ranked by assessments completed</p>
+      {/* Salesperson Leaderboard */}
+      <Card>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+          <h3 style={{ margin: 0, fontSize: 15, color: B.blk }}>Salesperson Leaderboard</h3>
+          <span style={{ fontSize: 11, color: "#888" }}>{PERIODS.find(p => p.key === period).label}</span>
+        </div>
+        <p style={{ margin: "0 0 14px", fontSize: 12, color: "#888" }}>Ranked by assessments completed</p>
 
-            {bySp.map((s, i) => (
-              <div key={s.salesperson} style={{
-                display: "flex", alignItems: "center", gap: 10, padding: "10px 0",
-                borderBottom: "1px solid #f0f0f0", cursor: "pointer",
-              }} onClick={() => setFilter(filter === s.salesperson ? "" : s.salesperson)}>
-                <span style={{
-                  width: 26, height: 26, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 12, fontWeight: 700, color: B.w, fontFamily: F,
-                  background: i === 0 ? "#FFD700" : i === 1 ? "#C0C0C0" : i === 2 ? "#CD7F32" : "#ddd",
-                  ...(i > 2 ? { color: "#888" } : {}),
-                }}>{i + 1}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: filter === s.salesperson ? B.red : B.blk }}>{s.salesperson}</div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3 }}>
-                    <div style={{ flex: 1, maxWidth: 180, height: 6, background: "#eee", borderRadius: 3, overflow: "hidden" }}>
-                      <div style={{ height: "100%", width: `${(s.count / maxCount) * 100}%`, background: B.grn, borderRadius: 3 }} />
-                    </div>
-                  </div>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: B.blk }}>{s.count}</div>
-                  <div style={{ fontSize: 11, color: "#888" }}>Avg {fmt(s.avg_dur || 0)}</div>
+        {bySp.length === 0 && <p style={{ fontSize: 13, color: "#888" }}>No submissions this period.</p>}
+        {bySp.map((s, i) => (
+          <div key={s.salesperson} style={{
+            display: "flex", alignItems: "center", gap: 10, padding: "10px 0",
+            borderBottom: "1px solid #f0f0f0", cursor: "pointer",
+          }} onClick={() => setFilter(filter === s.salesperson ? "" : s.salesperson)}>
+            <span style={{
+              width: 26, height: 26, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 12, fontWeight: 700, color: B.w, fontFamily: F,
+              background: i === 0 ? "#FFD700" : i === 1 ? "#C0C0C0" : i === 2 ? "#CD7F32" : "#ddd",
+              ...(i > 2 ? { color: "#888" } : {}),
+            }}>{i + 1}</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: filter === s.salesperson ? B.red : B.blk }}>{s.salesperson}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3 }}>
+                <div style={{ flex: 1, maxWidth: 180, height: 6, background: "#eee", borderRadius: 3, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${(s.count / maxCount) * 100}%`, background: B.grn, borderRadius: 3 }} />
                 </div>
               </div>
-            ))}
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: B.blk }}>{s.count}</div>
+              <div style={{ fontSize: 11, color: "#888" }}>Avg {fmt(s.avg_dur)}</div>
+            </div>
+          </div>
+        ))}
 
-            {notSubmitted.length > 0 && (
-              <>
-                <div style={{ margin: "16px 0 10px", padding: "8px 12px", background: "#FEF3C7", borderRadius: 8, display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 14 }}>&#9888;&#65039;</span>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "#92400E" }}>
-                    {notSubmitted.length} salesperson{notSubmitted.length !== 1 ? "s" : ""} with zero submissions
-                  </span>
-                </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
-                  {notSubmitted.map(n => (
-                    <span key={n} style={{
-                      background: "#FEE2E2", color: "#991B1B", padding: "4px 12px", borderRadius: 20,
-                      fontSize: 12, fontWeight: 600,
-                    }}>{n}</span>
-                  ))}
-                </div>
-              </>
-            )}
-          </Card>
-        </>);
-      })()}
+        {notSubmitted.length > 0 && (
+          <>
+            <div style={{ margin: "16px 0 10px", padding: "8px 12px", background: "#FEF3C7", borderRadius: 8, display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 14 }}>&#9888;&#65039;</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: "#92400E" }}>
+                {notSubmitted.length} salesperson{notSubmitted.length !== 1 ? "s" : ""} with zero submissions
+              </span>
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+              {notSubmitted.map(n => (
+                <span key={n} style={{
+                  background: "#FEE2E2", color: "#991B1B", padding: "4px 12px", borderRadius: 20,
+                  fontSize: 12, fontWeight: 600,
+                }}>{n}</span>
+              ))}
+            </div>
+          </>
+        )}
+      </Card>
 
       {/* Top Hot Buttons */}
       {topHot.length > 0 && (
@@ -280,7 +373,7 @@ export default function Dashboard() {
             <div key={key} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
               <div style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>{walkaroundLabels[key] || key}</div>
               <div style={{ width: 140, height: 8, background: "#eee", borderRadius: 4, overflow: "hidden" }}>
-                <div style={{ height: "100%", width: `${(count / stats.total) * 100}%`, background: B.red, borderRadius: 4 }} />
+                <div style={{ height: "100%", width: `${(count / total) * 100}%`, background: B.red, borderRadius: 4 }} />
               </div>
               <span style={{ fontSize: 12, color: "#888", minWidth: 30, textAlign: "right" }}>{count}</span>
             </div>
@@ -308,15 +401,18 @@ export default function Dashboard() {
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
           <h3 style={{ margin: 0, fontSize: 15, color: B.blk }}>
-            {filter ? `${filter}'s Assessments` : "Recent Assessments"}
+            {filter ? `${filter}'s Assessments` : "Assessments"}
           </h3>
-          {filter && (
-            <button onClick={() => setFilter("")} style={{ fontFamily: F, fontSize: 11, color: B.red, background: "none", border: `1px solid ${B.red}`, borderRadius: 6, padding: "3px 10px", cursor: "pointer" }}>
-              Clear Filter
-            </button>
-          )}
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            {filter && (
+              <button onClick={() => setFilter("")} style={{ fontFamily: F, fontSize: 11, color: B.red, background: "none", border: `1px solid ${B.red}`, borderRadius: 6, padding: "3px 10px", cursor: "pointer" }}>
+                Clear Filter
+              </button>
+            )}
+            <span style={{ fontSize: 11, color: "#888" }}>{filtered.length} result{filtered.length !== 1 ? "s" : ""}</span>
+          </div>
         </div>
-        {filtered.length === 0 && <p style={{ fontSize: 13, color: "#888" }}>No assessments yet.</p>}
+        {filtered.length === 0 && <p style={{ fontSize: 13, color: "#888" }}>No assessments this period.</p>}
         {filtered.slice(0, 50).map(s => (
           <div key={s.id} onClick={() => setSelected(s)} style={{
             display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0",
