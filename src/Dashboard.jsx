@@ -152,6 +152,8 @@ export default function Dashboard() {
 
   const activeSp = bySp.length;
   const notSubmitted = ALL_SALESPEOPLE.filter(n => !spMap[n]);
+  const tradeCount = submissions.filter(s => s.has_trade).length;
+  const tradeRate = total > 0 ? Math.round((tradeCount / total) * 100) : 0;
   const maxCount = bySp.length > 0 ? Math.max(...bySp.map(s => s.count)) : 1;
 
   // Hot buttons for period
@@ -283,9 +285,10 @@ export default function Dashboard() {
       </div>
 
       {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
         <Stat label="Assessments" value={total} sub={period !== "all" ? `${allStats.total} all time` : undefined} />
         <Stat label="Avg Discovery" value={fmt(avgDur)} />
+        <Stat label="Trade-In Rate" value={`${tradeRate}%`} sub={`${tradeCount} of ${total}`} />
         <Stat label="Active Salespeople" value={activeSp} sub={`of ${ALL_SALESPEOPLE.length}`} />
         <Stat label="Haven't Submitted" value={notSubmitted.length} sub={notSubmitted.length === 0 ? "Everyone's in!" : "Need follow-up"} />
       </div>
