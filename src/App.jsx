@@ -417,7 +417,8 @@ export default function NeedsAssessment() {
   };
 
   const submit = async () => {
-    const submission = { ...d, hasTrade, hot, ts: new Date().toISOString(), dur: t0 ? Math.floor((Date.now() - t0) / 1000) : 0 };
+    const rawDur = t0 ? Math.floor((Date.now() - t0) / 1000) : 0;
+    const submission = { ...d, hasTrade, hot, ts: new Date().toISOString(), dur: Math.min(rawDur, 1800) };
     localStorage.removeItem(SAVE_KEY);
     // Fire both API calls immediately before any state changes
     const dbSave = fetch("/api/submit", {
