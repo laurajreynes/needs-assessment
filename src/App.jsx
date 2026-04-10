@@ -274,6 +274,15 @@ const Btn = ({ children, onClick, primary, style: s }) => (
 const Timer = ({ t0 }) => {
   const [n, sN] = useState(Date.now());
   useEffect(() => { const i = setInterval(() => sN(Date.now()), 1000); return () => clearInterval(i) }, []);
+  if (!t0) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <Clock size={14} color="#888" />
+        <span style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: "#888" }}>0:00</span>
+        <span style={{ fontFamily: F, fontSize: 10, color: "#888" }}>Starts when you begin</span>
+      </div>
+    );
+  }
   const d = Math.floor((n - t0) / 1000), m = Math.floor(d / 60), s = d % 60;
   const c = m < 5 ? "#22c55e" : m < 10 ? "#f59e0b" : "#ef4444";
   return (
@@ -340,7 +349,7 @@ export default function NeedsAssessment() {
   const saved = useRef(loadSaved());
 
   const [view, setView] = useState("form");
-  const [t0, setT0] = useState(() => saved.current?.t0 || Date.now());
+  const [t0, setT0] = useState(() => saved.current?.t0 || null);
   const [hasTrade, setHasTrade] = useState(() => saved.current?.hasTrade ?? true);
   const [subs, setSubs] = useState(() => {
     try { const raw = localStorage.getItem(SAVE_KEY + "-subs"); return raw ? JSON.parse(raw) : []; } catch { return []; }
@@ -350,8 +359,9 @@ export default function NeedsAssessment() {
   const [expandedHot, setExpandedHot] = useState({});
   const [emailStatus, setEmailStatus] = useState(null);
 
-  const s = k => v => setD(p => ({ ...p, [k]: v }));
-  const togLife = i => setD(p => ({ ...p, life: p.life.includes(i) ? p.life.filter(x => x !== i) : [...p.life, i] }));
+  const startTimer = () => { if (!t0) setT0(Date.now()); };
+  const s = k => v => { startTimer(); setD(p => ({ ...p, [k]: v })); };
+  const togLife = i => { startTimer(); setD(p => ({ ...p, life: p.life.includes(i) ? p.life.filter(x => x !== i) : [...p.life, i] })); };
   const toggleHotInfo = (key) => setExpandedHot(p => ({ ...p, [key]: !p[key] }));
   const hasVOI = d.stk.trim() !== "";
   const hot = getHot(d);
@@ -407,7 +417,7 @@ export default function NeedsAssessment() {
   };
 
   const submit = async () => {
-    const submission = { ...d, hasTrade, hot, ts: new Date().toISOString(), dur: Math.floor((Date.now() - t0) / 1000) };
+    const submission = { ...d, hasTrade, hot, ts: new Date().toISOString(), dur: t0 ? Math.floor((Date.now() - t0) / 1000) : 0 };
     localStorage.removeItem(SAVE_KEY);
     // Fire both API calls immediately before any state changes
     const dbSave = fetch("/api/submit", {
@@ -426,7 +436,7 @@ export default function NeedsAssessment() {
   const startNew = () => {
     localStorage.removeItem(SAVE_KEY);
     setView("form");
-    setT0(Date.now());
+    setT0(null);
     setD({ ...defaultData, sp: d.sp });
     setHasTrade(true);
     setExpandedHot({});
@@ -436,7 +446,7 @@ export default function NeedsAssessment() {
   const resetForm = () => {
     if (!confirm("Clear this assessment and start fresh?")) return;
     localStorage.removeItem(SAVE_KEY);
-    setT0(Date.now());
+    setT0(null);
     setD({ ...defaultData, sp: d.sp });
     setHasTrade(true);
     setExpandedHot({});
@@ -745,7 +755,7 @@ export default function NeedsAssessment() {
 
         {/* 4. TRADE TOGGLE + TRADE OR RECENT VEHICLE */}
         <FadeIn>
-          <div style={{ marginBottom: 20, display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} onClick={() => setHasTrade(!hasTrade)}>
+          <div style={{ marginBottom: 20, display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} onClick={() => { startTimer(); setHasTrade(!hasTrade); }}>
             <div style={{ width: 44, height: 24, borderRadius: 12, background: hasTrade ? B.red : "#ccc", position: "relative", flexShrink: 0 }}>
               <div style={{ width: 20, height: 20, borderRadius: 10, background: B.w, position: "absolute", top: 2, left: hasTrade ? 22 : 2, transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
             </div>
