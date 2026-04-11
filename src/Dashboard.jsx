@@ -293,60 +293,26 @@ export default function Dashboard() {
         <Stat label="Haven't Submitted" value={notSubmitted.length} sub={notSubmitted.length === 0 ? "Everyone's in!" : "Need follow-up"} />
       </div>
 
-      {/* Salesperson Leaderboard */}
-      <Card>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-          <h3 style={{ margin: 0, fontSize: 15, color: B.blk }}>Salesperson Leaderboard</h3>
-          <span style={{ fontSize: 11, color: "#888" }}>{PERIODS.find(p => p.key === period).label}</span>
-        </div>
-        <p style={{ margin: "0 0 14px", fontSize: 12, color: "#888" }}>Ranked by assessments completed</p>
-
-        {bySp.length === 0 && <p style={{ fontSize: 13, color: "#888" }}>No submissions this period.</p>}
-        {bySp.map((s, i) => (
-          <div key={s.salesperson} style={{
-            display: "flex", alignItems: "center", gap: 10, padding: "10px 0",
-            borderBottom: "1px solid #f0f0f0", cursor: "pointer",
-          }} onClick={() => setFilter(filter === s.salesperson ? "" : s.salesperson)}>
-            <span style={{
-              width: 26, height: 26, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 12, fontWeight: 700, color: B.w, fontFamily: F,
-              background: i === 0 ? "#FFD700" : i === 1 ? "#C0C0C0" : i === 2 ? "#CD7F32" : "#ddd",
-              ...(i > 2 ? { color: "#888" } : {}),
-            }}>{i + 1}</span>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: filter === s.salesperson ? B.red : B.blk }}>{s.salesperson}</div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3 }}>
-                <div style={{ flex: 1, maxWidth: 180, height: 6, background: "#eee", borderRadius: 3, overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${(s.count / maxCount) * 100}%`, background: B.grn, borderRadius: 3 }} />
-                </div>
-              </div>
-            </div>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 16, fontWeight: 700, color: B.blk }}>{s.count}</div>
-              <div style={{ fontSize: 11, color: "#888" }}>Avg {fmt(s.avg_dur)}</div>
-            </div>
+      {/* Haven't Submitted */}
+      {notSubmitted.length > 0 && (
+        <Card>
+          <div style={{ padding: "4px 0 10px", display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 14 }}>&#9888;&#65039;</span>
+            <h3 style={{ margin: 0, fontSize: 15, color: "#92400E" }}>
+              {notSubmitted.length} salesperson{notSubmitted.length !== 1 ? "s" : ""} haven't submitted
+            </h3>
+            <span style={{ fontSize: 11, color: "#888", marginLeft: "auto" }}>{PERIODS.find(p => p.key === period).label}</span>
           </div>
-        ))}
-
-        {notSubmitted.length > 0 && (
-          <>
-            <div style={{ margin: "16px 0 10px", padding: "8px 12px", background: "#FEF3C7", borderRadius: 8, display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 14 }}>&#9888;&#65039;</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: "#92400E" }}>
-                {notSubmitted.length} salesperson{notSubmitted.length !== 1 ? "s" : ""} with zero submissions
-              </span>
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
-              {notSubmitted.map(n => (
-                <span key={n} style={{
-                  background: "#FEE2E2", color: "#991B1B", padding: "4px 12px", borderRadius: 20,
-                  fontSize: 12, fontWeight: 600,
-                }}>{n}</span>
-              ))}
-            </div>
-          </>
-        )}
-      </Card>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {notSubmitted.map(n => (
+              <span key={n} style={{
+                background: "#FEE2E2", color: "#991B1B", padding: "4px 12px", borderRadius: 20,
+                fontSize: 12, fontWeight: 600,
+              }}>{n}</span>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* Top Hot Buttons */}
       {topHot.length > 0 && (
