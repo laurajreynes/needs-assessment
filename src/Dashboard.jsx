@@ -40,18 +40,21 @@ const fmt = (s) => {
 
 /* ── Date helpers ── */
 const startOfDay = (d) => { const x = new Date(d); x.setHours(0,0,0,0); return x; };
+const startOfYesterday = () => { const x = startOfDay(new Date()); x.setDate(x.getDate() - 1); return x; };
 const getMonday = (d) => {
   const x = new Date(d); x.setHours(0,0,0,0);
   const day = x.getDay(); const diff = x.getDate() - day + (day === 0 ? -6 : 1);
   x.setDate(diff); return x;
 };
 const startOfMonth = (d) => { const x = new Date(d); x.setHours(0,0,0,0); x.setDate(1); return x; };
+const FAR_FUTURE = new Date(8640000000000000);
 
 const PERIODS = [
-  { key: "today", label: "Today", fn: () => startOfDay(new Date()) },
-  { key: "wtd", label: "Week to Date", fn: () => getMonday(new Date()) },
-  { key: "mtd", label: "Month to Date", fn: () => startOfMonth(new Date()) },
-  { key: "all", label: "All Time", fn: () => new Date(0) },
+  { key: "today", label: "Today", range: () => ({ start: startOfDay(new Date()), end: FAR_FUTURE }) },
+  { key: "yesterday", label: "Yesterday", range: () => ({ start: startOfYesterday(), end: startOfDay(new Date()) }) },
+  { key: "wtd", label: "Week to Date", range: () => ({ start: getMonday(new Date()), end: FAR_FUTURE }) },
+  { key: "mtd", label: "Month to Date", range: () => ({ start: startOfMonth(new Date()), end: FAR_FUTURE }) },
+  { key: "all", label: "All Time", range: () => ({ start: new Date(0), end: FAR_FUTURE }) },
 ];
 
 /* ── CSV Export ── */
@@ -96,6 +99,7 @@ export default function Dashboard() {
   const [selected, setSelected] = useState(null);
   const [filter, setFilter] = useState("");
   const [period, setPeriod] = useState("today");
+  const [showMissing, setShowMissing] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -132,8 +136,11 @@ export default function Dashboard() {
   const { submissions: allSubs, stats: allStats, bySp: allBySp, byDay } = data;
 
   /* ── Filter by time period ── */
-  const cutoff = PERIODS.find(p => p.key === period).fn();
-  const submissions = allSubs.filter(s => new Date(s.submitted_at) >= cutoff);
+  const { start: periodStart, end: periodEnd } = PERIODS.find(p => p.key === period).range();
+  const submissions = allSubs.filter(s => {
+    const d = new Date(s.submitted_at);
+    return d >= periodStart && d < periodEnd;
+  });
 
   /* ── Compute stats for filtered period ── */
   const total = submissions.length;
@@ -246,11 +253,11 @@ export default function Dashboard() {
   }
 
   return (
-    <div style={{ fontFamily: F, maxWidth: 900, margin: "0 auto", padding: 20, background: B.lg, minHeight: "100vh" }}>
+    <div style={{ fontFamily: F, maxWidth: 1300, margin: "0 auto", padding: 24, background: B.lg, minHeight: "100vh" }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: 22, color: B.blk }}>Manager Dashboard</h1>
+          <h1 style={{ margin: 0, fontSize: 24, color: B.blk }}>Manager Dashboard</h1>
           <p style={{ margin: "4px 0 0", fontSize: 13, color: "#888" }}>Fred Anderson Toyota of Cape Coral</p>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
@@ -285,50 +292,54 @@ export default function Dashboard() {
       </div>
 
       {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 16 }}>
         <Stat label="Assessments" value={total} sub={period !== "all" ? `${allStats.total} all time` : undefined} />
         <Stat label="Avg Discovery" value={fmt(avgDur)} />
         <Stat label="Trade-In Rate" value={`${tradeRate}%`} sub={`${tradeCount} of ${total}`} />
         <Stat label="Active Salespeople" value={activeSp} sub={`of ${ALL_SALESPEOPLE.length}`} />
-        <Stat label="Haven't Submitted" value={notSubmitted.length} sub={notSubmitted.length === 0 ? "Everyone's in!" : "Need follow-up"} />
       </div>
 
-      {/* Haven't Submitted */}
-      {notSubmitted.length > 0 && (
-        <Card>
-          <div style={{ padding: "4px 0 10px", display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 14 }}>&#9888;&#65039;</span>
-            <h3 style={{ margin: 0, fontSize: 15, color: "#92400E" }}>
-              {notSubmitted.length} salesperson{notSubmitted.length !== 1 ? "s" : ""} haven't submitted
-            </h3>
-            <span style={{ fontSize: 11, color: "#888", marginLeft: "auto" }}>{PERIODS.find(p => p.key === period).label}</span>
-          </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {notSubmitted.map(n => (
-              <span key={n} style={{
-                background: "#FEE2E2", color: "#991B1B", padding: "4px 12px", borderRadius: 20,
-                fontSize: 12, fontWeight: 600,
-              }}>{n}</span>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      {/* Top Hot Buttons */}
-      {topHot.length > 0 && (
-        <Card>
-          <h3 style={{ margin: "0 0 12px", fontSize: 15, color: B.blk }}>Top Walkaround Focus Areas</h3>
-          {topHot.map(([key, count]) => (
-            <div key={key} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-              <div style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>{walkaroundLabels[key] || key}</div>
-              <div style={{ width: 140, height: 8, background: "#eee", borderRadius: 4, overflow: "hidden" }}>
-                <div style={{ height: "100%", width: `${(count / total) * 100}%`, background: B.red, borderRadius: 4 }} />
-              </div>
-              <span style={{ fontSize: 12, color: "#888", minWidth: 30, textAlign: "right" }}>{count}</span>
+      {/* Patterns row: Activity by Salesperson + Top Walkaround Focus */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(420px, 1fr))", gap: 16, marginBottom: 16 }}>
+        {/* Activity by Salesperson */}
+        {bySp.length > 0 && (
+          <Card>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <h3 style={{ margin: 0, fontSize: 15, color: B.blk }}>Activity by Salesperson</h3>
+              <span style={{ fontSize: 11, color: "#888" }}>{PERIODS.find(p => p.key === period).label}</span>
             </div>
-          ))}
-        </Card>
-      )}
+            {bySp.map(s => (
+              <div key={s.salesperson} onClick={() => setFilter(s.salesperson)} style={{
+                display: "flex", alignItems: "center", gap: 8, padding: "8px 0",
+                borderBottom: "1px solid #f0f0f0", cursor: "pointer",
+              }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: B.blk, minWidth: 150 }}>{s.salesperson}</div>
+                <div style={{ flex: 1, height: 8, background: "#eee", borderRadius: 4, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${(s.count / maxCount) * 100}%`, background: B.red, borderRadius: 4 }} />
+                </div>
+                <span style={{ fontSize: 12, color: "#666", fontWeight: 600, minWidth: 20, textAlign: "right" }}>{s.count}</span>
+                <span style={{ fontSize: 11, color: "#aaa", minWidth: 48, textAlign: "right" }}>{fmt(s.avg_dur)}</span>
+              </div>
+            ))}
+          </Card>
+        )}
+
+        {/* Top Hot Buttons */}
+        {topHot.length > 0 && (
+          <Card>
+            <h3 style={{ margin: "0 0 12px", fontSize: 15, color: B.blk }}>Top Walkaround Focus Areas</h3>
+            {topHot.map(([key, count]) => (
+              <div key={key} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                <div style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>{walkaroundLabels[key] || key}</div>
+                <div style={{ width: 140, height: 8, background: "#eee", borderRadius: 4, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${(count / total) * 100}%`, background: B.red, borderRadius: 4 }} />
+                </div>
+                <span style={{ fontSize: 12, color: "#888", minWidth: 30, textAlign: "right" }}>{count}</span>
+              </div>
+            ))}
+          </Card>
+        )}
+      </div>
 
       {/* Daily Activity */}
       {byDay.length > 0 && (
@@ -336,7 +347,7 @@ export default function Dashboard() {
           <h3 style={{ margin: "0 0 12px", fontSize: 15, color: B.blk }}>Daily Activity</h3>
           {byDay.slice(0, 14).map(d => (
             <div key={d.day} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-              <span style={{ fontSize: 12, color: "#888", minWidth: 90, fontFamily: F }}>{new Date(d.day).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</span>
+              <span style={{ fontSize: 12, color: "#888", minWidth: 110, fontFamily: F }}>{new Date(d.day).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</span>
               <div style={{ flex: 1, height: 8, background: "#eee", borderRadius: 4, overflow: "hidden" }}>
                 <div style={{ height: "100%", width: `${(d.count / Math.max(...byDay.map(x => x.count))) * 100}%`, background: B.red, borderRadius: 4 }} />
               </div>
@@ -385,6 +396,28 @@ export default function Dashboard() {
           </div>
         ))}
       </Card>
+
+      {/* Haven't Submitted — minimized, collapsible, at the bottom */}
+      {notSubmitted.length > 0 && (
+        <div style={{ marginTop: 8, padding: "10px 14px", background: "transparent", borderTop: "1px solid #e5e5e5" }}>
+          <button onClick={() => setShowMissing(v => !v)} style={{
+            fontFamily: F, fontSize: 12, color: "#888", background: "none", border: "none",
+            cursor: "pointer", padding: 0,
+          }}>
+            {showMissing ? "▾" : "▸"} {notSubmitted.length} not on the list this {PERIODS.find(p => p.key === period).label.toLowerCase()} (not everyone works every day)
+          </button>
+          {showMissing && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+              {notSubmitted.map(n => (
+                <span key={n} style={{
+                  background: "#f0f0f0", color: "#666", padding: "3px 10px", borderRadius: 20,
+                  fontSize: 11, fontWeight: 500,
+                }}>{n}</span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
