@@ -34,9 +34,12 @@ export default async function handler(req, res) {
         must_haves TEXT,
         notes TEXT,
         duration INTEGER DEFAULT 0,
-        submitted_at TIMESTAMPTZ DEFAULT NOW()
+        submitted_at TIMESTAMPTZ DEFAULT NOW(),
+        lang TEXT DEFAULT 'en'
       )
     `;
+    // Add lang column if it doesn't exist (migration for existing tables)
+    await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS lang TEXT DEFAULT 'en'`;
     return res.status(200).json({ success: true, message: "Table created" });
   } catch (err) {
     return res.status(500).json({ error: err.message });

@@ -13,14 +13,14 @@ export default async function handler(req, res) {
         trade_lender, trade_balance, trade_payment,
         recent_vehicle, recent_like, recent_dislike,
         lifestyle, hot_buttons, primary_driver, decision_influencers,
-        must_haves, notes, duration, submitted_at
+        must_haves, notes, duration, submitted_at, lang
       ) VALUES (
         ${d.sp || ""}, ${d.cn || ""}, ${d.stk || ""}, ${d.vy || ""}, ${d.vm || ""}, ${d.vmod || ""},
         ${d.mot || ""}, ${d.hasTrade || false}, ${d.tv || ""}, ${d.tlike || ""}, ${d.tdis || ""},
         ${d.tlen || ""}, ${d.tbal || ""}, ${d.tpay || ""},
         ${d.rv || ""}, ${d.rl || ""}, ${d.rd || ""},
         ${d.life || []}, ${d.hot || []}, ${d.pd || ""}, ${d.di || ""},
-        ${d.mh || ""}, ${d.nn || ""}, ${d.dur || 0}, ${d.ts || new Date().toISOString()}
+        ${d.mh || ""}, ${d.nn || ""}, ${d.dur || 0}, ${d.ts || new Date().toISOString()}, ${d.lang || "en"}
       )
     `;
     return res.status(200).json({ success: true });

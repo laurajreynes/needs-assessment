@@ -163,6 +163,12 @@ export default function Dashboard() {
   const tradeRate = total > 0 ? Math.round((tradeCount / total) * 100) : 0;
   const maxCount = bySp.length > 0 ? Math.max(...bySp.map(s => s.count)) : 1;
 
+  // Language breakdown
+  const enCount = submissions.filter(s => (s.lang || "en") === "en").length;
+  const esCount = submissions.filter(s => s.lang === "es").length;
+  const enPct = total > 0 ? Math.round((enCount / total) * 100) : 0;
+  const esPct = total > 0 ? Math.round((esCount / total) * 100) : 0;
+
   // Hot buttons for period
   const hotCounts = {};
   submissions.forEach(s => {
@@ -396,6 +402,21 @@ export default function Dashboard() {
           </div>
         ))}
       </Card>
+
+      {/* Language breakdown */}
+      {total > 0 && (
+        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", marginTop: 4 }}>
+          <span style={{ fontSize: 12, color: "#888" }}>Completion by language:</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ width: 120, height: 6, background: "#eee", borderRadius: 3, overflow: "hidden", display: "flex" }}>
+              <div style={{ height: "100%", width: `${enPct}%`, background: B.red }} />
+              <div style={{ height: "100%", width: `${esPct}%`, background: "#2563EB" }} />
+            </div>
+            <span style={{ fontSize: 11, color: B.red, fontWeight: 600 }}>EN {enCount} ({enPct}%)</span>
+            <span style={{ fontSize: 11, color: "#2563EB", fontWeight: 600 }}>ES {esCount} ({esPct}%)</span>
+          </div>
+        </div>
+      )}
 
       {/* Haven't Submitted — minimized, collapsible, at the bottom */}
       {notSubmitted.length > 0 && (
