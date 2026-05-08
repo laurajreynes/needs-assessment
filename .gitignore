@@ -26,3 +26,6 @@ logo_b64*.txt
 upload_*.*
 .vercel
 .env*.local
+.env.tccdiscovery
+.env.local
+.env.production
