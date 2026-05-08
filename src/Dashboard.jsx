@@ -11,11 +11,11 @@ const walkaroundLabels = {
 };
 
 const ALL_SALESPEOPLE = [
-  "Nick Plank","Kojak McKown","Bailey Hilt","D'Marcus Anthony","Jody Scharping",
+  "Nick Plank","Kojak McKown","Bailey Hilt","D'Marcus Anthony",
   "Mario Aguilera","Will Thermidor","Miguel Medina","Zak Banwart","Carlos Tamayo",
   "Alain Pino","Kelly Floyd","Damian Flores","Alex Coolen","Sean Rowland",
   "Jeff Princile","Manuel Fernandez Segui","Luis Ferrer Jimenez","Jayden Hodges",
-  "Louis Mazzaro","Matt Smith","Henry Rosales Guerrero","Lazaro Garcia","Arlex Lacayo",
+  "Louis Mazzaro","Matt Smith","Henry Rosales Guerrero","Arlex Lacayo",
   "Steven Herrera","Christian Odio","Jessica Dykstra","Renny Ontiveros","Peter Esposito",
   "Ricardo Navarro","Justin Steffy","Tyler Powell",
 ];
