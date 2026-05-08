@@ -425,7 +425,7 @@ export default function Dashboard() {
             fontFamily: F, fontSize: 12, color: "#888", background: "none", border: "none",
             cursor: "pointer", padding: 0,
           }}>
-            {showMissing ? "▾" : "▸"} {notSubmitted.length} not on the list this {PERIODS.find(p => p.key === period).label.toLowerCase()} (not everyone works every day)
+            {showMissing ? "▾" : "▸"} {notSubmitted.length} not on the list this {PERIODS.find(p => p.key === period).label.toLowerCase()}
           </button>
           {showMissing && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>

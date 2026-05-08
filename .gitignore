@@ -24,3 +24,5 @@ dist-ssr
 *.sw?
 logo_b64*.txt
 upload_*.*
+.vercel
+.env*.local
