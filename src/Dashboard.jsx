@@ -305,6 +305,46 @@ export default function Dashboard() {
         <Stat label="Active Salespeople" value={activeSp} sub={`of ${ALL_SALESPEOPLE.length}`} />
       </div>
 
+      {/* Recent Submissions */}
+      <Card>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <h3 style={{ margin: 0, fontSize: 15, color: B.blk }}>
+            {filter ? `${filter}'s Assessments` : "Assessments"}
+          </h3>
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            {filter && (
+              <button onClick={() => setFilter("")} style={{ fontFamily: F, fontSize: 11, color: B.red, background: "none", border: `1px solid ${B.red}`, borderRadius: 6, padding: "3px 10px", cursor: "pointer" }}>
+                Clear Filter
+              </button>
+            )}
+            <span style={{ fontSize: 11, color: "#888" }}>{filtered.length} result{filtered.length !== 1 ? "s" : ""}</span>
+          </div>
+        </div>
+        {filtered.length === 0 && <p style={{ fontSize: 13, color: "#888" }}>No assessments this period.</p>}
+        {filtered.slice(0, 50).map(s => (
+          <div key={s.id} onClick={() => setSelected(s)} style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0",
+            borderBottom: "1px solid #f0f0f0", cursor: "pointer",
+          }}>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: B.blk }}>{s.customer || "—"}</div>
+              <div style={{ fontSize: 12, color: "#888" }}>
+                {s.salesperson} &bull; {new Date(s.submitted_at).toLocaleString()}
+                {s.stock ? ` • #${s.stock}` : ""}
+              </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {s.hot_buttons?.length > 0 && (
+                <span style={{ fontSize: 11, color: "#1E3A5F", background: "#E0F2FE", padding: "2px 8px", borderRadius: 10 }}>
+                  {s.hot_buttons.length} focus
+                </span>
+              )}
+              <span style={{ fontSize: 12, color: "#666", fontWeight: 600 }}>{fmt(s.duration)}</span>
+            </div>
+          </div>
+        ))}
+      </Card>
+
       {/* Patterns row: Activity by Salesperson + Top Walkaround Focus */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(420px, 1fr))", gap: 16, marginBottom: 16 }}>
         {/* Activity by Salesperson */}
@@ -362,46 +402,6 @@ export default function Dashboard() {
           ))}
         </Card>
       )}
-
-      {/* Recent Submissions */}
-      <Card>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <h3 style={{ margin: 0, fontSize: 15, color: B.blk }}>
-            {filter ? `${filter}'s Assessments` : "Assessments"}
-          </h3>
-          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            {filter && (
-              <button onClick={() => setFilter("")} style={{ fontFamily: F, fontSize: 11, color: B.red, background: "none", border: `1px solid ${B.red}`, borderRadius: 6, padding: "3px 10px", cursor: "pointer" }}>
-                Clear Filter
-              </button>
-            )}
-            <span style={{ fontSize: 11, color: "#888" }}>{filtered.length} result{filtered.length !== 1 ? "s" : ""}</span>
-          </div>
-        </div>
-        {filtered.length === 0 && <p style={{ fontSize: 13, color: "#888" }}>No assessments this period.</p>}
-        {filtered.slice(0, 50).map(s => (
-          <div key={s.id} onClick={() => setSelected(s)} style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0",
-            borderBottom: "1px solid #f0f0f0", cursor: "pointer",
-          }}>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: B.blk }}>{s.customer || "\u2014"}</div>
-              <div style={{ fontSize: 12, color: "#888" }}>
-                {s.salesperson} &bull; {new Date(s.submitted_at).toLocaleString()}
-                {s.stock ? ` \u2022 #${s.stock}` : ""}
-              </div>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              {s.hot_buttons?.length > 0 && (
-                <span style={{ fontSize: 11, color: "#1E3A5F", background: "#E0F2FE", padding: "2px 8px", borderRadius: 10 }}>
-                  {s.hot_buttons.length} focus
-                </span>
-              )}
-              <span style={{ fontSize: 12, color: "#666", fontWeight: 600 }}>{fmt(s.duration)}</span>
-            </div>
-          </div>
-        ))}
-      </Card>
 
       {/* Language breakdown */}
       {total > 0 && (
