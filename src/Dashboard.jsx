@@ -375,6 +375,48 @@ export default function Dashboard() {
         </div>
       </Card>
 
+      {/* Team Roster — only when a team is selected */}
+      {teamFilter && (
+        <Card>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <h3 style={{ margin: 0, fontSize: 15, color: B.blk }}>{teamFilter}'s Roster</h3>
+            <span style={{ fontSize: 11, color: "#888" }}>{PERIODS.find(p => p.key === period).label}</span>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 8 }}>
+            {teamMembers.map(name => {
+              const stats = spMap[name];
+              const submitted = !!stats;
+              return (
+                <div
+                  key={name}
+                  onClick={() => setFilter(filter === name ? "" : name)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    padding: "8px 12px",
+                    background: filter === name ? "#FFF5F6" : (submitted ? "#F0FDF4" : "#FAFAFA"),
+                    border: `1px solid ${filter === name ? B.red : (submitted ? "#D1FAE5" : "#eee")}`,
+                    borderRadius: 8,
+                    cursor: "pointer",
+                  }}
+                >
+                  <span style={{
+                    width: 8, height: 8, borderRadius: "50%",
+                    background: submitted ? B.grn : "#ccc",
+                    flexShrink: 0,
+                  }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: B.blk, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{name}</div>
+                    <div style={{ fontSize: 11, color: submitted ? "#16a34a" : "#999" }}>
+                      {submitted ? `${stats.count} assessment${stats.count !== 1 ? "s" : ""} • avg ${fmt(Math.round(stats.totalDur / stats.count))}` : "Not yet submitted"}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
+
       {/* Recent Submissions */}
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
