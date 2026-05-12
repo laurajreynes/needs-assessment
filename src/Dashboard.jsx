@@ -10,15 +10,17 @@ const walkaroundLabels = {
   offroad: "Off-Road Capability", family: "Family Friendly",
 };
 
-const ALL_SALESPEOPLE = [
-  "Nick Plank","Kojak McKown","Bailey Hilt","D'Marcus Anthony",
-  "Mario Aguilera","Will Thermidor","Miguel Medina","Zak Banwart","Carlos Tamayo",
-  "Alain Pino","Kelly Floyd","Damian Flores","Alex Coolen","Sean Rowland",
-  "Jeff Princile","Manuel Fernandez Segui","Luis Ferrer Jimenez","Jayden Hodges",
-  "Louis Mazzaro","Matt Smith","Henry Rosales Guerrero","Arlex Lacayo",
-  "Steven Herrera","Christian Odio","Jessica Dykstra","Renny Ontiveros","Peter Esposito",
-  "Ricardo Navarro","Justin Steffy","Tyler Powell",
+const TEAMS = [
+  { sm: "Ariel Sanchez",      members: ["Carlos Tamayo","Manuel Fernandez Segui","Alain Pino","Henry Rosales Guerrero","Peter Esposito"] },
+  { sm: "Morgan Gelsleichter",members: ["Christian Odio","Kelly Floyd","Jayden Hodges","Cody Thompson","Miguel Medina"] },
+  { sm: "Kyle Carter",        members: ["Steven Herrera","Mario Aguilera","Bailey Hilt","Matt Smith"] },
+  { sm: "Kelly Weaver",       members: ["Kojak McKown","Damian Flores","Arlex Lacayo","Charles Leigh"] },
+  { sm: "Kevin Depiano",      members: ["Renny Ontiveros","D'Marcus Anthony","Luis Ferrer Jimenez","Will Thermidor"] },
+  { sm: "Gary Catalanatto",   members: ["Louis Mazzaro","Zak Banwart","Nick Plank","Jeff Princile","Alex Coolen"] },
 ];
+
+const ALL_SALESPEOPLE = TEAMS.flatMap(t => t.members);
+const TEAM_BY_MEMBER = Object.fromEntries(TEAMS.flatMap(t => t.members.map(m => [m, t.sm])));
 
 const Card = ({ children, style: s }) => (
   <div style={{ background: B.w, borderRadius: 12, padding: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.06)", marginBottom: 16, ...s }}>{children}</div>
@@ -98,6 +100,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState(null);
   const [filter, setFilter] = useState("");
+  const [teamFilter, setTeamFilter] = useState("");
   const [period, setPeriod] = useState("today");
   const [showMissing, setShowMissing] = useState(false);
 
@@ -137,10 +140,28 @@ export default function Dashboard() {
 
   /* ── Filter by time period ── */
   const { start: periodStart, end: periodEnd } = PERIODS.find(p => p.key === period).range();
-  const submissions = allSubs.filter(s => {
+  const periodSubs = allSubs.filter(s => {
     const d = new Date(s.submitted_at);
     return d >= periodStart && d < periodEnd;
   });
+
+  /* ── Compute team-level participation BEFORE narrowing by team filter ── */
+  const teamStats = TEAMS.map(t => {
+    const memberSet = new Set(t.members);
+    const teamSubs = periodSubs.filter(s => memberSet.has(s.salesperson));
+    const submitted = new Set(teamSubs.map(s => s.salesperson)).size;
+    const pct = t.members.length > 0 ? Math.round((submitted / t.members.length) * 100) : 0;
+    return { sm: t.sm, members: t.members.length, submitted, pct, count: teamSubs.length };
+  });
+  const maxTeamCount = Math.max(1, ...teamStats.map(t => t.count));
+
+  /* ── Now narrow to selected team (if any) for everything else ── */
+  const submissions = teamFilter
+    ? periodSubs.filter(s => TEAM_BY_MEMBER[s.salesperson] === teamFilter)
+    : periodSubs;
+  const teamMembers = teamFilter
+    ? TEAMS.find(t => t.sm === teamFilter)?.members || []
+    : ALL_SALESPEOPLE;
 
   /* ── Compute stats for filtered period ── */
   const total = submissions.length;
@@ -158,7 +179,7 @@ export default function Dashboard() {
     .sort((a, b) => b.count - a.count);
 
   const activeSp = bySp.length;
-  const notSubmitted = ALL_SALESPEOPLE.filter(n => !spMap[n]);
+  const notSubmitted = teamMembers.filter(n => !spMap[n]);
   const tradeCount = submissions.filter(s => s.has_trade).length;
   const tradeRate = total > 0 ? Math.round((tradeCount / total) * 100) : 0;
   const maxCount = bySp.length > 0 ? Math.max(...bySp.map(s => s.count)) : 1;
@@ -302,8 +323,56 @@ export default function Dashboard() {
         <Stat label="Assessments" value={total} sub={period !== "all" ? `${allStats.total} all time` : undefined} />
         <Stat label="Avg Discovery" value={fmt(avgDur)} />
         <Stat label="Trade-In Rate" value={`${tradeRate}%`} sub={`${tradeCount} of ${total}`} />
-        <Stat label="Active Salespeople" value={activeSp} sub={`of ${ALL_SALESPEOPLE.length}`} />
+        <Stat label="Active Salespeople" value={activeSp} sub={`of ${teamMembers.length}`} />
       </div>
+
+      {/* Team Scoreboard */}
+      <Card>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <h3 style={{ margin: 0, fontSize: 15, color: B.blk }}>
+            Teams {teamFilter ? `— ${teamFilter}` : ""}
+          </h3>
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            {teamFilter && (
+              <button onClick={() => { setTeamFilter(""); setFilter(""); }} style={{ fontFamily: F, fontSize: 11, color: B.red, background: "none", border: `1px solid ${B.red}`, borderRadius: 6, padding: "3px 10px", cursor: "pointer" }}>
+                Show All Teams
+              </button>
+            )}
+            <span style={{ fontSize: 11, color: "#888" }}>{PERIODS.find(p => p.key === period).label}</span>
+          </div>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 10 }}>
+          {teamStats.map(t => {
+            const isActive = teamFilter === t.sm;
+            return (
+              <div
+                key={t.sm}
+                onClick={() => { setTeamFilter(isActive ? "" : t.sm); setFilter(""); }}
+                style={{
+                  padding: "10px 12px",
+                  border: `1.5px solid ${isActive ? B.red : "#e5e5e5"}`,
+                  background: isActive ? "#FFF5F6" : B.w,
+                  borderRadius: 10,
+                  cursor: "pointer",
+                  transition: "all 0.15s",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: B.blk }}>{t.sm}</div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: B.red, fontFamily: F }}>{t.pct}%</div>
+                </div>
+                <div style={{ height: 6, background: "#eee", borderRadius: 3, overflow: "hidden", marginBottom: 6 }}>
+                  <div style={{ height: "100%", width: `${(t.count / maxTeamCount) * 100}%`, background: B.red }} />
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#888" }}>
+                  <span>{t.submitted} of {t.members} submitted</span>
+                  <span>{t.count} assessment{t.count !== 1 ? "s" : ""}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
 
       {/* Recent Submissions */}
       <Card>
