@@ -379,7 +379,12 @@ export default function Dashboard() {
       {teamFilter && (
         <Card>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <h3 style={{ margin: 0, fontSize: 15, color: B.blk }}>{teamFilter}'s Roster</h3>
+            <div>
+              <h3 style={{ margin: 0, fontSize: 15, color: B.blk }}>{teamFilter}'s Roster</h3>
+              <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
+                {teamMembers.filter(n => spMap[n]).length} of {teamMembers.length} salespeople submitted
+              </div>
+            </div>
             <span style={{ fontSize: 11, color: "#888" }}>{PERIODS.find(p => p.key === period).label}</span>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 8 }}>
