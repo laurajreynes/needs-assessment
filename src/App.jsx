@@ -418,18 +418,15 @@ export default function NeedsAssessment() {
     const rawDur = t0 ? Math.floor((Date.now() - t0) / 1000) : 0;
     const submission = { ...d, hasTrade, hot, ts: new Date().toISOString(), dur: Math.min(rawDur, 1800), lang: "en" };
     localStorage.removeItem(SAVE_KEY);
-    // Fire both API calls immediately before any state changes
+    // Save to database only — email sending disabled
     const dbSave = fetch("/api/submit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(submission),
     }).catch(err => console.error("Submit fetch error:", err));
-    const emailSend = sendEmail(submission);
-    // Now update UI
     setSubs(p => [...p, submission]);
     setView("done");
-    // Wait for both to finish
-    await Promise.allSettled([dbSave, emailSend]);
+    await dbSave;
   };
 
   const startNew = () => {
