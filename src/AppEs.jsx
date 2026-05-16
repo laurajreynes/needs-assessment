@@ -40,8 +40,8 @@ const SALESPEOPLE = [
   { name: "Cody Thompson", email: "cody.thompson@anderson-auto.net" },
   { name: "Troy Sanchez", email: "tsanchez@anderson-auto.net" },
   { name: "Baha Sadri", email: "bsadri@anderson-auto.net" },
-  { name: "Michael Montenegro", email: "mmontenegro@anderson-auto.net" },
-  { name: "Phillip Northcutt", email: "pnorthcutt@anderson-auto.net" },
+  { name: "Michael Montenegro", email: "MMontenegro@anderson-auto.net" },
+  { name: "Phillip Northcutt", email: "PNorthcutt@anderson-auto.net" },
   { name: "Tylor Shearn", email: "tshearn@anderson-auto.net" },
 ];
 
@@ -401,8 +401,9 @@ export default function NeedsAssessment() {
   /* ── ENVIAR EMAIL AUTOMATICAMENTE ── */
   const sendEmail = async (submission) => {
     const spInfo = SALESPEOPLE.find(p => p.name === submission.sp);
-    const recipients = [...MANAGER_EMAILS];
+    const recipients = [];
     if (spInfo) recipients.push(spInfo.email);
+    if (recipients.length === 0) return;
     const html = buildEmailHTML(submission);
     const subject = `Evaluacion: ${submission.cn || "Cliente"} — ${submission.sp || "Vendedor/a"}`;
     try {
@@ -422,15 +423,15 @@ export default function NeedsAssessment() {
     const rawDur = t0 ? Math.floor((Date.now() - t0) / 1000) : 0;
     const submission = { ...d, hasTrade, hot, ts: new Date().toISOString(), dur: Math.min(rawDur, 1800), lang: "es" };
     localStorage.removeItem(SAVE_KEY);
-    // Solo guardar en base de datos — envío de email deshabilitado
     const dbSave = fetch("/api/submit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(submission),
     }).catch(err => console.error("Error de envio:", err));
+    const emailSend = sendEmail(submission);
     setSubs(p => [...p, submission]);
     setView("done");
-    await dbSave;
+    await Promise.allSettled([dbSave, emailSend]);
   };
 
   const startNew = () => {
