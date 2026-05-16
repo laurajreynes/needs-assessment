@@ -39,6 +39,10 @@ const SALESPEOPLE = [
   { name: "Charles Leigh", email: "cleigh@anderson-auto.net" },
   { name: "Cody Thompson", email: "cody.thompson@anderson-auto.net" },
   { name: "Troy Sanchez", email: "tsanchez@anderson-auto.net" },
+  { name: "Baha Sadri", email: "bsadri@anderson-auto.net" },
+  { name: "Michael Montenegro", email: "mmontenegro@anderson-auto.net" },
+  { name: "Phillip Northcutt", email: "pnorthcutt@anderson-auto.net" },
+  { name: "Tylor Shearn", email: "tshearn@anderson-auto.net" },
 ];
 
 const MANAGER_EMAILS = [
