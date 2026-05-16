@@ -17,7 +17,7 @@ const TEAMS = [
   { sm: "Kelly Weaver",       members: ["Kojak McKown","Michael Montenegro","Damian Flores","Arlex Lacayo","Phillip Northcutt"] },
   { sm: "Kevin Depiano",      members: ["Tylor Shearn","Renny Ontiveros","D'Marcus Anthony","Luis Ferrer Jimenez","Will Thermidor"] },
   { sm: "Gary Catalanatto",   members: ["Louis Mazzaro","Zak Banwart","Nick Plank","Jeff Princile","Alex Coolen"] },
-  { sm: "Brandon Lortz",      members: ["Sean Rowland"] },
+  { sm: "Brandon Lortz",      members: ["Sean Rowland","Charles Leigh","Jessica Dykstra","Troy Sanchez"] },
 ];
 
 const ALL_SALESPEOPLE = TEAMS.flatMap(t => t.members);
