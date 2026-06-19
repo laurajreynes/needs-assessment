@@ -28,7 +28,6 @@ const SALESPEOPLE = [
   { name: "Luis Ferrer Jimenez", email: "lferrerjimenez@anderson-auto.net" },
   { name: "Jayden Hodges", email: "jayden.hodges@anderson-auto.net" },
   { name: "Louis Mazzaro", email: "lmazzaro@anderson-auto.net" },
-  { name: "Matt Smith", email: "matthew.smith@anderson-auto.net" },
   { name: "Henry Rosales Guerrero", email: "henry.rosalesguerrero@anderson-auto.net" },
   { name: "Arlex Lacayo", email: "alacayo@anderson-auto.net" },
   { name: "Steven Herrera", email: "steven.herrera@anderson-auto.net" },
@@ -36,13 +35,15 @@ const SALESPEOPLE = [
   { name: "Jessica Dykstra", email: "jdykstra@anderson-auto.net" },
   { name: "Renny Ontiveros", email: "ROntiveros@anderson-auto.net" },
   { name: "Peter Esposito", email: "PEsposito@anderson-auto.net" },
-  { name: "Charles Leigh", email: "cleigh@anderson-auto.net" },
   { name: "Cody Thompson", email: "cody.thompson@anderson-auto.net" },
-  { name: "Troy Sanchez", email: "tsanchez@anderson-auto.net" },
   { name: "Baha Sadri", email: "bsadri@anderson-auto.net" },
   { name: "Michael Montenegro", email: "MMontenegro@anderson-auto.net" },
   { name: "Phillip Northcutt", email: "PNorthcutt@anderson-auto.net" },
-  { name: "Tylor Shearn", email: "tshearn@anderson-auto.net" },
+  { name: "Joshua Reyes", email: "jreyes@anderson-auto.net" },
+  { name: "Robert Hebein", email: "rhebein@anderson-auto.net" },
+  { name: "Marc Toscanini", email: "mtoscanini@anderson-auto.net" },
+  { name: "Ashton Taylor", email: "ataylor@anderson-auto.net" },
+  { name: "Moises Capote", email: "mcapote@anderson-auto.net" },
 ];
 
 const MANAGER_EMAILS = [

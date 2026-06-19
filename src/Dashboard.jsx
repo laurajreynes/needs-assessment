@@ -13,11 +13,11 @@ const walkaroundLabels = {
 const TEAMS = [
   { sm: "Ariel Sanchez",      members: ["Carlos Tamayo","Manuel Fernandez Segui","Alain Pino","Henry Rosales Guerrero","Peter Esposito"] },
   { sm: "Morgan Gelsleichter",members: ["Christian Odio","Kelly Floyd","Jayden Hodges","Cody Thompson","Miguel Medina"] },
-  { sm: "Kyle Carter",        members: ["Steven Herrera","Mario Aguilera","Bailey Hilt","Matt Smith","Baha Sadri"] },
+  { sm: "Kyle Carter",        members: ["Steven Herrera","Mario Aguilera","Bailey Hilt","Baha Sadri","Moises Capote"] },
   { sm: "Kelly Weaver",       members: ["Kojak McKown","Michael Montenegro","Damian Flores","Arlex Lacayo","Phillip Northcutt"] },
-  { sm: "Kevin Depiano",      members: ["Tylor Shearn","Renny Ontiveros","D'Marcus Anthony","Luis Ferrer Jimenez","Will Thermidor"] },
+  { sm: "Kevin Depiano",      members: ["D'Marcus Anthony","Luis Ferrer Jimenez","Will Thermidor","Renny Ontiveros","Ashton Taylor"] },
   { sm: "Gary Catalanatto",   members: ["Louis Mazzaro","Zak Banwart","Nick Plank","Jeff Princile","Alex Coolen"] },
-  { sm: "Brandon Lortz",      members: ["Sean Rowland","Charles Leigh","Jessica Dykstra","Troy Sanchez"] },
+  { sm: "Brandon Lortz",      members: ["Jessica Dykstra","Joshua Reyes","Sean Rowland","Robert Hebein","Marc Toscanini"] },
 ];
 
 const ALL_SALESPEOPLE = TEAMS.flatMap(t => t.members);
