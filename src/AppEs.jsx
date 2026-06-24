@@ -47,13 +47,14 @@ const SALESPEOPLE = [
 ];
 
 const MANAGER_EMAILS = [
-  "jpisano@anderson-auto.net",
   "asanchez@anderson-auto.net",
-  "kdepiano@anderson-auto.net",
   "mgelsleichter@anderson-auto.net",
   "kcarter@anderson-auto.net",
+  "kweaver@anderson-auto.net",
+  "kdepiano@anderson-auto.net",
   "gcatalanotto@anderson-auto.net",
-  "blortz@anderson-auto.net",
+  "bburton@anderson-auto.net",
+  "jpisano@anderson-auto.net",
   "lreynes@anderson-auto.net",
 ];
 
@@ -402,9 +403,8 @@ export default function NeedsAssessment() {
   /* ── ENVIAR EMAIL AUTOMATICAMENTE ── */
   const sendEmail = async (submission) => {
     const spInfo = SALESPEOPLE.find(p => p.name === submission.sp);
-    const recipients = [];
+    const recipients = [...MANAGER_EMAILS];
     if (spInfo) recipients.push(spInfo.email);
-    if (recipients.length === 0) return;
     const html = buildEmailHTML(submission);
     const subject = `Evaluacion: ${submission.cn || "Cliente"} — ${submission.sp || "Vendedor/a"}`;
     try {
