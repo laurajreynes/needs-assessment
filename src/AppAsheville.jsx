@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Clock, Printer, Send, RotateCcw, CheckCircle2, Star, User, Car, Users, Heart, MapPin, Map, Truck, Compass, Shield, Gauge, Sparkles, Smartphone, Fuel, Sofa, Mic, MicOff, Info, TrendingDown, Mail, PackageCheck, Search, AlertTriangle, Palette, Wrench } from "lucide-react";
 
+const LOGO = "/logo-asheville.png";
 const SAVE_KEY = "fata-needs-assessment";
 
 const B = { red: "#C8102E", dk: "#A50D24", blk: "#1A1A1A", dg: "#2D2D2D", lg: "#F5F5F5", w: "#FFF", amber: "#B45309", grn: "#15803D" };
@@ -403,8 +404,20 @@ const HotPill = ({ cat, guide, expanded, onToggle }) => (
   </div>
 );
 
+/* Logo with text fallback — falls back cleanly if the image isn't uploaded yet */
 const Wordmark = ({ size = "md" }) => {
+  const [imgOk, setImgOk] = useState(true);
   const big = size === "lg";
+  if (imgOk) {
+    return (
+      <img
+        src={LOGO}
+        alt="Fred Anderson Toyota of Asheville"
+        onError={() => setImgOk(false)}
+        style={{ height: big ? 76 : 46, objectFit: "contain", display: "block" }}
+      />
+    );
+  }
   return (
     <div style={{ fontFamily: F, lineHeight: 1 }}>
       <div style={{ fontSize: big ? 20 : 15, fontWeight: 800, color: B.blk, letterSpacing: 0.5 }}>FRED ANDERSON TOYOTA</div>
