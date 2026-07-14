@@ -31,6 +31,115 @@ const PERIODS = [
 
 const fmt = s => `${Math.floor((s || 0) / 60)}:${String((s || 0) % 60).padStart(2, "0")}`;
 
+/* ── DEMO DATA (?demo=1) — fake submissions for showing the tool before it's live ── */
+const hrsAgo = h => new Date(Date.now() - h * 3600e3).toISOString();
+let _id = 100;
+const L = (sp, cn, stk, hrs, dur, o1, o1c, o1alt, o1e, o1no, o2, o2c, o2n, o3, o3c, o3n, flex, prio, time, commit, notes, extra = {}) => ({
+  id: _id++, salesperson: sp, customer: cn, stock: stk, availability: "locate", has_trade: !!extra.tv, duration: dur, submitted_at: hrsAgo(hrs),
+  data: { o1model: o1[0], o1trim: o1[1], o1colors: o1c, o1alt, o1equip: o1e, o1no, o2model: o2[0], o2trim: o2[1], o2colors: o2c, o2note: o2n,
+          o3model: o3[0], o3trim: o3[1], o3colors: o3c, o3note: o3n, flexColor: flex, priority: prio, timeline: time, commit, locnotes: notes, ...extra },
+});
+const S = (sp, cn, stk, hrs, dur, vy, vmod, vtrim, vcolor, seen, extra = {}) => ({
+  id: _id++, salesperson: sp, customer: cn, stock: stk, availability: "instock", has_trade: !!extra.tv, duration: dur, submitted_at: hrsAgo(hrs),
+  data: { vy, vmod, vtrim, vcolor, seen, ...extra },
+});
+const W = (sp, cn, hrs, dur, extra = {}) => ({
+  id: _id++, salesperson: sp, customer: cn, stock: "", availability: "shopping", has_trade: !!extra.tv, duration: dur, submitted_at: hrsAgo(hrs),
+  data: { ...extra },
+});
+
+const DEMO_SUBS = [
+  // ── Today ──
+  L("Reid Callahan", "Sarah Whitfield", "T26-1044", 2, 512,
+    ["Grand Highlander", "Limited"], ["Midnight Black"], ["Magnetic Gray", "Blueprint"], ["3rd Row", "AWD / 4WD", "Leather Seats"], "No cloth seats. Will not take white.",
+    ["Highlander", "XLE"], ["Blueprint"], "Same 3rd row, saves about $60/mo",
+    ["RAV4", "XLE Premium"], ["Army Green"], "Smaller, but has every feature she listed",
+    "no", "equipment", "This week", "yes", "Third kid due in October — needs it before then",
+    { mot: "Third kid on the way, Pilot is too tight", tv: "2019 Honda Pilot EX-L, 78k", tlike: "Reliable, easy to park", tdis: "Third row is useless", tlen: "Honda Financial", tbal: "$14,200", tpay: "$465/mo", life: ["Family", "Road Trips", "Safety First"], mh: "Third row is non-negotiable", pd: "Sarah", di: "Husband Kevin — wants to see it Saturday" }),
+  S("Marisol Vega", "Marcus Doyle", "T26-2210", 3, 341, "2026", "Tacoma", "TRD Off-Road", "Solar Octane", "Yes — walked it",
+    { mot: "Weekend truck, hunting lease in Madison County", rv: "2015 Tundra", rl: "Never let him down", rd: "Too big for the driveway", life: ["Off-Road", "Towing / Hauling"], mh: "Needs a bed liner and tow package" }),
+  L("Trent Boykin", "Priya Raman", "T26-3387", 5, 638,
+    ["4Runner", "TRD Pro"], ["Army Green"], ["Underground"], ["AWD / 4WD", "Sunroof / Moonroof", "Roof Rails"], "No 2WD. No beige interior.",
+    ["4Runner", "Limited"], ["Midnight Black"], "Softer ride — her husband prefers it",
+    ["Grand Highlander", "Platinum"], ["Magnetic Gray"], "If they decide they want more room",
+    "depends", "equipment", "2-4 weeks", "think", "Cross-shopping a Bronco. Get her in the TRD Pro this week.",
+    { mot: "Moving to Black Mountain, wants something for the snow", tv: "2021 Subaru Outback", life: ["Off-Road", "Road Trips"], mh: "Must handle the mountain in winter" }),
+  W("Reid Callahan", "Ellen Park", 6, 218,
+    { mot: "Lease ends next month, just starting to look", tv: "2022 Corolla LE", life: ["Daily Commute", "Fuel Economy"], mh: "Wants payment under $400" }),
+  S("Devin Oakley", "Curtis Lyle", "T26-1877", 8, 402, "2026", "Camry", "SE", "Celestial Silver", "Yes — walked it",
+    { mot: "Old Altima finally died", tv: "2012 Nissan Altima, 190k", life: ["Daily Commute", "Fuel Economy"], mh: "CarPlay and good gas mileage" }),
+
+  // ── Yesterday ──
+  L("Marisol Vega", "Dana Cho", "T26-1190", 26, 727,
+    ["RAV4 Hybrid", "XSE"], ["Blueprint"], ["Midnight Black", "Ice Cap"], ["AWD / 4WD", "Sunroof / Moonroof", "Blind Spot Monitor"], "Won't take Super White",
+    ["RAV4", "XLE Premium"], ["Blueprint", "Magnetic Gray"], "Non-hybrid if the payment works better",
+    ["Corolla Cross", "XSE"], ["Ice Cap"], "Cheaper option if she has to stretch",
+    "yes", "equipment", "Flexible", "yes", "Ready to sign. Just needs the right one — will wait.",
+    { mot: "Commuting to Hendersonville daily, gas is killing her", tv: "2017 Ford Escape", tlike: "Cargo space", tdis: "Terrible mileage", tbal: "$3,100", tpay: "$310/mo", life: ["Daily Commute", "Fuel Economy", "Safety First"], mh: "Hybrid if the numbers work" }),
+  S("Hank Wexler", "Roy Ferrante", "T26-2044", 28, 289, "2026", "Tundra", "SR5", "Midnight Black", "No — online only",
+    { mot: "Contractor, needs to tow a skid steer", life: ["Towing / Hauling", "Performance"], mh: "Must tow 10k lbs" }),
+  L("Trent Boykin", "Alicia Warrick", "T26-4120", 30, 594,
+    ["Sienna", "XSE"], ["Midnight Black"], ["Celestial Silver"], ["3rd Row", "Power Liftgate", "Wireless Charging"], "No captain's chairs — needs the bench",
+    ["Sienna", "XLE"], ["Celestial Silver", "Midnight Black"], "Same van, less money",
+    ["Grand Highlander", "XLE"], ["Magnetic Gray"], "If she'll trade sliding doors for an SUV",
+    "yes", "color", "This week", "yes", "Twins. She is buying this week — do not lose her over color.",
+    { mot: "Twins arriving, needs sliding doors", tv: "2018 Highlander", life: ["Family", "Safety First"], mh: "Sliding doors, 8 seats" }),
+  W("Devin Oakley", "Nathan Briggs", 32, 176,
+    { mot: "Son turns 16 in the spring", life: ["Safety First"], mh: "Safe and cheap to insure" }),
+  S("Sofia Mendes", "Grace Tolliver", "T26-1533", 34, 355, "2026", "Corolla Cross", "XLE", "Wind Chill Pearl", "Yes — walked it",
+    { mot: "Downsizing after retirement", tv: "2016 4Runner", tlike: "Sat up high", tdis: "Too much truck now", life: ["Downsizing", "Fuel Economy", "Comfort / Space"], mh: "Easy to get in and out of" }),
+
+  // ── Earlier this week ──
+  L("Reid Callahan", "Miguel Ortega", "T26-2901", 50, 681,
+    ["Tacoma", "TRD Sport"], ["Underground"], ["Magnetic Gray", "Solar Octane"], ["AWD / 4WD", "Tow Package", "Bed Liner"], "No white, no red",
+    ["Tacoma", "SR5"], ["Magnetic Gray"], "Same truck, fewer options, better payment",
+    ["Tundra", "SR5"], ["Midnight Black"], "If he decides he wants the bigger bed",
+    "depends", "equipment", "2-4 weeks", "yes", "Tow package is the whole deal. Don't trade for one without it.",
+    { mot: "Started a landscaping business", life: ["Towing / Hauling", "Performance"], mh: "Must tow the trailer" }),
+  S("Hank Wexler", "Beth Ann Sizemore", "T26-1701", 54, 298, "2026", "Highlander", "XLE", "Magnetic Gray", "Yes — walked it",
+    { mot: "Carpool for three kids", tv: "2019 Pilot", life: ["Family", "Safety First"], mh: "Third row, easy to load kids" }),
+  S("Marisol Vega", "Jonah Pruitt", "T26-3055", 58, 244, "2026", "Prius", "XLE", "Supersonic Red", "No — online only",
+    { mot: "Wants the best mileage he can get", life: ["Daily Commute", "Fuel Economy"], mh: "50+ mpg" }),
+  L("Sofia Mendes", "Karen Dillard", "T26-2288", 72, 559,
+    ["Grand Highlander", "Platinum"], ["Wind Chill Pearl"], ["Celestial Silver"], ["Leather Seats", "Panoramic Roof", "JBL Audio", "3rd Row"], "Nothing with cloth. No dark interior.",
+    ["Highlander", "Platinum"], ["Wind Chill Pearl"], "Same luxury level, smaller",
+    ["Sequoia", "Limited"], ["Celestial Silver"], "If she wants more presence",
+    "no", "color", "Flexible", "think", "Very particular. Wants white on light interior — hard to find.",
+    { mot: "Empty nesters, want something nice for road trips", tv: "2020 Lexus RX", life: ["Road Trips", "Comfort / Space", "Style / Looks"], mh: "Panoramic roof is a must" }),
+  W("Trent Boykin", "Sam Whitaker", 76, 198,
+    { mot: "Just looking, timeline is fuzzy", life: ["Style / Looks"], mh: "Something sporty" }),
+  S("Devin Oakley", "Tara Nunnally", "T26-1466", 80, 321, "2026", "RAV4", "XLE", "Blueprint", "Yes — walked it",
+    { mot: "First new car ever", tv: "2011 Civic", life: ["Daily Commute", "Safety First"], mh: "Backup camera and blind spot" }),
+
+  // ── Earlier this month ──
+  L("Hank Wexler", "Doug Rainey", "T26-3712", 170, 622,
+    ["Sequoia", "TRD Pro"], ["Army Green"], ["Midnight Black"], ["AWD / 4WD", "Tow Package", "3rd Row", "JBL Audio"], "Will not take a Limited",
+    ["Tundra", "TRD Pro"], ["Army Green"], "If he can live without the third row",
+    ["Land Cruiser", "1958"], ["Midnight Black"], "Different vibe but he liked it online",
+    "depends", "equipment", "Flexible", "yes", "Big ticket. Worth calling around the region for.",
+    { mot: "Tows a camper to the Outer Banks twice a year", tv: "2018 Expedition", life: ["Towing / Hauling", "Road Trips", "Family"], mh: "Must tow 9k+" }),
+  S("Sofia Mendes", "Rachel Bumgarner", "T26-1122", 196, 276, "2026", "Camry", "XSE", "Supersonic Red", "Yes — walked it",
+    { mot: "Promotion, wants to treat herself", life: ["Style / Looks", "Performance"], mh: "Wants it to look sharp" }),
+  L("Reid Callahan", "Terrance Hobbs", "T26-2655", 220, 704,
+    ["Tundra", "Limited"], ["Magnetic Gray"], ["Midnight Black", "Underground"], ["Tow Package", "Leather Seats", "Running Boards"], "No short bed",
+    ["Tundra", "SR5"], ["Magnetic Gray"], "Cheaper, still tows what he needs",
+    ["Tacoma", "Limited"], ["Underground"], "If the Tundra payment is too high",
+    "yes", "equipment", "2-4 weeks", "yes", "Long bed is the sticking point.",
+    { mot: "Hauling equipment for work", tv: "2016 Silverado", life: ["Towing / Hauling"], mh: "Long bed, tow package" }),
+  S("Marisol Vega", "Lena Cortez", "T26-1988", 244, 312, "2026", "Corolla", "SE", "Ice Cap", "Yes — walked it",
+    { mot: "Daughter starting at UNCA", life: ["Daily Commute", "Safety First", "Fuel Economy"], mh: "Safe, cheap, reliable" }),
+  W("Sofia Mendes", "Cliff Hendricks", 268, 187,
+    { mot: "Truck is paid off, wondering if now is the time", tv: "2014 Tacoma", life: ["Off-Road"], mh: "Only if the numbers make sense" }),
+  L("Devin Oakley", "Yvonne Brashear", "T26-4401", 292, 588,
+    ["RAV4 Prime", "XSE"], ["Supersonic Red"], ["Midnight Black", "Blueprint"], ["AWD / 4WD", "Sunroof / Moonroof", "Wireless Charging"], "Not interested in a regular hybrid",
+    ["RAV4 Hybrid", "XSE"], ["Supersonic Red"], "If the Prime is impossible to find",
+    ["Corolla Cross", "XSE"], ["Blueprint"], "Backup if she wants to spend less",
+    "depends", "equipment", "Flexible", "think", "Prime is scarce. Set expectations early.",
+    { mot: "Wants to plug in at home, has solar", tv: "2019 CR-V", life: ["Fuel Economy", "Tech & Features", "Daily Commute"], mh: "Plug-in capability" }),
+  S("Trent Boykin", "Owen Falkner", "T26-2377", 316, 265, "2026", "4Runner", "SR5 Premium", "Underground", "No — online only",
+    { mot: "Outdoor guide, needs clearance", life: ["Off-Road", "Road Trips"], mh: "Ground clearance and roof rack" }),
+];
+
 const Card = ({ children, style: s }) => (
   <div style={{ background: B.w, borderRadius: 12, padding: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.06)", marginBottom: 16, ...s }}>{children}</div>
 );
@@ -72,9 +181,11 @@ const RankList = ({ items, empty }) => {
   ));
 };
 
+const isDemo = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("demo") === "1";
+
 export default function DashboardAsheville() {
-  const [allSubs, setAllSubs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [allSubs, setAllSubs] = useState(isDemo ? DEMO_SUBS : []);
+  const [loading, setLoading] = useState(!isDemo);
   const [err, setErr] = useState(null);
   const [period, setPeriod] = useState("wtd");
   const [availFilter, setAvailFilter] = useState("");
@@ -82,6 +193,7 @@ export default function DashboardAsheville() {
   const [logoOk, setLogoOk] = useState(true);
 
   useEffect(() => {
+    if (isDemo) return;
     fetch("/api/dashboard-asheville")
       .then(r => r.json())
       .then(j => {
@@ -151,6 +263,20 @@ export default function DashboardAsheville() {
           }
           <h1 style={{ fontSize: 20, margin: 0, color: B.blk }}>Needs Assessment Dashboard</h1>
         </div>
+
+        {/* DEMO BANNER */}
+        {isDemo && (
+          <div style={{
+            display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", marginBottom: 16,
+            background: "#FEF9C3", border: "1.5px solid #FDE047", borderRadius: 10,
+          }}>
+            <AlertTriangle size={15} color="#854D0E" />
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#854D0E" }}>Sample data</span>
+            <span style={{ fontSize: 12, color: "#854D0E" }}>
+              These are made-up submissions for demonstration. Nothing here is a real customer.
+            </span>
+          </div>
+        )}
 
         {/* PERIOD TABS */}
         <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
