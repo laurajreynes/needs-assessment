@@ -36,7 +36,9 @@ const hrsAgo = h => new Date(Date.now() - h * 3600e3).toISOString();
 let _id = 100;
 const L = (sp, cn, stk, hrs, dur, o1, o1c, o1alt, o1e, o1no, o2, o2c, o2n, o3, o3c, o3n, flex, prio, time, commit, notes, extra = {}) => ({
   id: _id++, salesperson: sp, customer: cn, stock: stk, availability: "locate", has_trade: !!extra.tv, duration: dur, submitted_at: hrsAgo(hrs),
-  data: { o1model: o1[0], o1trim: o1[1], o1colors: o1c, o1alt, o1equip: o1e, o1no, o2model: o2[0], o2trim: o2[1], o2colors: o2c, o2note: o2n,
+  data: { shown: "Showed the comparable units we had on the ground", whyNot: "Equipment and color didn't line up with what they needed",
+          triedStock: true, explainedWait: true,
+          o1model: o1[0], o1trim: o1[1], o1colors: o1c, o1alt, o1equip: o1e, o1no, o2model: o2[0], o2trim: o2[1], o2colors: o2c, o2note: o2n,
           o3model: o3[0], o3trim: o3[1], o3colors: o3c, o3note: o3n, flexColor: flex, priority: prio, timeline: time, commit, locnotes: notes, ...extra },
 });
 const S = (sp, cn, stk, hrs, dur, vy, vmod, vtrim, vcolor, seen, extra = {}) => ({
@@ -55,7 +57,8 @@ const DEMO_SUBS = [
     ["Highlander", "XLE"], ["Blueprint"], "Same 3rd row, saves about $60/mo",
     ["RAV4", "XLE Premium"], ["Army Green"], "Smaller, but has every feature she listed",
     "no", "equipment", "This week", "yes", "Third kid due in October — needs it before then",
-    { mot: "Third kid on the way, Pilot is too tight", tv: "2019 Honda Pilot EX-L, 78k", tlike: "Reliable, easy to park", tdis: "Third row is useless", tlen: "Honda Financial", tbal: "$14,200", tpay: "$465/mo", life: ["Family", "Road Trips", "Safety First"], mh: "Third row is non-negotiable", pd: "Sarah", di: "Husband Kevin — wants to see it Saturday" }),
+    { shown: "T26-1701 Highlander XLE, T26-2288 Grand Highlander XLE", whyNot: "Both were captain's chairs — she needs the 8-seat bench for three car seats across",
+      mot: "Third kid on the way, Pilot is too tight", tv: "2019 Honda Pilot EX-L, 78k", tlike: "Reliable, easy to park", tdis: "Third row is useless", tlen: "Honda Financial", tbal: "$14,200", tpay: "$465/mo", life: ["Family", "Road Trips", "Safety First"], mh: "Third row is non-negotiable", pd: "Sarah", di: "Husband Kevin — wants to see it Saturday" }),
   S("Marisol Vega", "Marcus Doyle", "T26-2210", 3, 341, "2026", "Tacoma", "TRD Off-Road", "Solar Octane", "Yes — walked it",
     { mot: "Weekend truck, hunting lease in Madison County", rv: "2015 Tundra", rl: "Never let him down", rd: "Too big for the driveway", life: ["Off-Road", "Towing / Hauling"], mh: "Needs a bed liner and tow package" }),
   L("Trent Boykin", "Priya Raman", "T26-3387", 5, 638,
@@ -63,7 +66,8 @@ const DEMO_SUBS = [
     ["4Runner", "Limited"], ["Midnight Black"], "Softer ride — her husband prefers it",
     ["Grand Highlander", "Platinum"], ["Magnetic Gray"], "If they decide they want more room",
     "depends", "equipment", "2-4 weeks", "think", "Cross-shopping a Bronco. Get her in the TRD Pro this week.",
-    { mot: "Moving to Black Mountain, wants something for the snow", tv: "2021 Subaru Outback", life: ["Off-Road", "Road Trips"], mh: "Must handle the mountain in winter" }),
+    { shown: "Didn't show anything — she came in asking for the TRD Pro by name", whyNot: "Says she only wants the TRD Pro", triedStock: false, explainedWait: false,
+      mot: "Moving to Black Mountain, wants something for the snow", tv: "2021 Subaru Outback", life: ["Off-Road", "Road Trips"], mh: "Must handle the mountain in winter" }),
   W("Reid Callahan", "Ellen Park", 6, 218,
     { mot: "Lease ends next month, just starting to look", tv: "2022 Corolla LE", life: ["Daily Commute", "Fuel Economy"], mh: "Wants payment under $400" }),
   S("Devin Oakley", "Curtis Lyle", "T26-1877", 8, 402, "2026", "Camry", "SE", "Celestial Silver", "Yes — walked it",
@@ -365,6 +369,11 @@ export default function DashboardAsheville() {
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                  {d.triedStock === false && (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#FEF2F2", color: B.red, border: "1px solid #FECACA", padding: "2px 8px", borderRadius: 12, fontSize: 11, fontWeight: 700 }}>
+                      <AlertTriangle size={11} /> Lot not worked
+                    </span>
+                  )}
                   {d.commit === "yes" && (
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#F0FDF4", color: B.grn, border: "1px solid #BBF7D0", padding: "2px 8px", borderRadius: 12, fontSize: 11, fontWeight: 700 }}>
                       <CheckCircle2 size={11} /> Ready
@@ -499,6 +508,13 @@ export default function DashboardAsheville() {
                   {selected.availability === "locate" && (
                     <div style={{ background: "#FFF7ED", border: "2px solid #F59E0B", borderRadius: 10, padding: 14, marginTop: 10 }}>
                       <h4 style={{ margin: "0 0 10px", fontSize: 12, fontWeight: 800, color: B.amber, textTransform: "uppercase", letterSpacing: 0.5 }}>Locate Profile</h4>
+                      <div style={{ background: B.w, border: "1px solid #FCD34D", borderRadius: 8, padding: 10, marginBottom: 12 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: B.amber, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Worked the lot first?</div>
+                        <Row label="Units shown" value={d.shown} />
+                        <Row label="Why they failed" value={d.whyNot} />
+                        <Row label="Worked the lot" value={d.triedStock ? "Yes — confirmed" : "NOT CONFIRMED"} />
+                        <Row label="Set expectations" value={d.explainedWait ? "Yes" : "No"} />
+                      </div>
                       <Row label="Option 1" value={[d.o1model, d.o1trim].filter(Boolean).join(" ")} />
                       <Row label="Preferred color" value={d.o1colors} />
                       <Row label="Will also take" value={d.o1alt} />

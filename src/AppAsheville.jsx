@@ -108,6 +108,7 @@ const defaultData = {
   sp: "", cn: "",
   stk: "", avail: "",
   vy: "", vmod: "", vtrim: "", vcolor: "", seen: "",
+  shown: "", whyNot: "", triedStock: false, explainedWait: false,
   o1model: "", o1trim: "", o1colors: [], o1alt: [], o1equip: [], o1no: "",
   o2model: "", o2trim: "", o2colors: [], o2note: "",
   o3model: "", o3trim: "", o3colors: [], o3note: "",
@@ -137,6 +138,15 @@ const buildEmailHTML = (sub) => {
     <div style="background:#FFF7ED;border:2px solid #F59E0B;border-radius:8px;padding:14px;margin:16px 0">
       <h3 style="color:#B45309;margin:0 0 4px;font-size:15px">DEALER TRADE / LOCATE REQUEST</h3>
       <p style="margin:0 0 10px;font-size:12px;color:#92400E">Customer wants a unit we do not have on the ground. Locate profile below.</p>
+      <div style="background:#FFF;border:1px solid #FCD34D;border-radius:6px;padding:10px;margin-bottom:10px">
+        <p style="margin:0 0 6px;font-size:11px;font-weight:700;color:#B45309;text-transform:uppercase;letter-spacing:0.5px">Worked the lot first?</p>
+        <table style="width:100%;border-collapse:collapse">
+          ${r("Units shown", sub.shown)}
+          ${r("Why they failed", sub.whyNot)}
+          ${r("Worked the lot", sub.triedStock ? "Yes — confirmed" : "NOT CONFIRMED")}
+          ${r("Set expectations", sub.explainedWait ? "Yes — told them it may take time" : "No")}
+        </table>
+      </div>
       <table style="width:100%;border-collapse:collapse">
         ${r("Option 1", [sub.o1model, sub.o1trim].filter(Boolean).join(" "))}
         ${r("Preferred color", list(sub.o1colors))}
@@ -457,6 +467,9 @@ export default function AshevilleAssessment() {
   /* ── LOCATE GATE — this is what forces the salesperson to open the customer up ── */
   const gaps = [];
   if (isLocate) {
+    if (!d.triedStock) gaps.push("Confirm you worked the lot first");
+    if (!d.shown.trim()) gaps.push("Which in-stock units you showed");
+    if (!d.whyNot.trim()) gaps.push("Why those didn't work");
     if (!d.o1model.trim()) gaps.push("Option 1 — model");
     if (!d.o1colors.length) gaps.push("Option 1 — preferred color");
     if (!d.o1equip.length) gaps.push("Option 1 — must-have equipment");
@@ -587,6 +600,9 @@ export default function AshevilleAssessment() {
               <Search size={16} color={B.amber} />
               <h4 style={{ margin: 0, fontSize: 13, fontWeight: 800, color: B.amber, textTransform: "uppercase", letterSpacing: 0.5 }}>Dealer Trade / Locate Request</h4>
             </div>
+            <SumRow label="Units shown" value={l.shown} />
+            <SumRow label="Why they failed" value={l.whyNot} />
+            <div style={{ height: 1, background: "#FCD34D", margin: "10px 0" }} />
             <SumRow label="Option 1" value={[l.o1model, l.o1trim].filter(Boolean).join(" ")} />
             <SumRow label="Preferred color" value={l.o1colors} />
             <SumRow label="Will also take" value={l.o1alt} />
@@ -708,7 +724,7 @@ export default function AshevilleAssessment() {
 
       <div style={{ background: B.red, padding: "6px 16px", textAlign: "center" }}>
         <p style={{ fontFamily: F, fontSize: 11, color: B.w, margin: 0, fontStyle: "italic", letterSpacing: 0.3 }}>
-          One shot at a dealer trade. Know exactly what they'll take before you ask.
+          Sell what's on the ground first. A dealer trade is the last resort, not the opening move.
         </p>
       </div>
 
@@ -734,9 +750,9 @@ export default function AshevilleAssessment() {
             <Fl label="Do we have it?" hint="Be honest here — this drives everything that follows.">
               <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8 }}>
                 {[
-                  { key: "instock", label: "In Stock", sub: "It's on the ground. Go show it.", icon: PackageCheck, tone: B.grn, bg: "#F0FDF4", br: "#BBF7D0" },
-                  { key: "locate", label: "Dealer Trade / Locate", sub: "We don't have it. We have to go get it.", icon: Search, tone: B.amber, bg: "#FFF7ED", br: "#FED7AA" },
-                  { key: "shopping", label: "Still Shopping", sub: "No specific unit picked yet.", icon: Compass, tone: "#2563EB", bg: "#EFF6FF", br: "#BFDBFE" },
+                  { key: "instock", label: "In Stock", sub: "Best outcome. It's on the ground — go sell it.", icon: PackageCheck, tone: B.grn, bg: "#F0FDF4", br: "#BBF7D0" },
+                  { key: "shopping", label: "Still Shopping", sub: "No unit picked yet. Land them on one from the lot.", icon: Compass, tone: "#2563EB", bg: "#EFF6FF", br: "#BFDBFE" },
+                  { key: "locate", label: "Dealer Trade / Locate", sub: "Last resort. Only after the lot has failed them.", icon: Search, tone: B.amber, bg: "#FFF7ED", br: "#FED7AA" },
                 ].map(o => {
                   const sel = d.avail === o.key;
                   const Ic = o.icon;
@@ -800,13 +816,56 @@ export default function AshevilleAssessment() {
                   <div>
                     <h3 style={{ fontFamily: F, fontSize: 16, fontWeight: 800, color: B.amber, margin: 0 }}>Locate Profile</h3>
                     <p style={{ fontFamily: F, fontSize: 12, color: "#92400E", margin: "2px 0 0" }}>
-                      We get one shot. Fill this out completely or we trade for the wrong car.
+                      A trade costs us margin, time, and a unit off someone else's lot. Justify it.
                     </p>
                   </div>
                 </div>
               </div>
 
               <div style={{ padding: "16px 20px" }}>
+
+                {/* GATE 0 — did you actually work the lot? */}
+                <div style={{ marginBottom: 20, padding: 14, background: "#FEF2F2", border: "1.5px solid #FECACA", borderRadius: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                    <AlertTriangle size={15} color={B.red} />
+                    <h4 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: B.red, fontFamily: F }}>Before we chase a car</h4>
+                  </div>
+                  <p style={{ fontFamily: F, fontSize: 12, color: "#991B1B", margin: "0 0 12px" }}>
+                    Most "we don't have it" is really "I didn't sell what we have." Show your work.
+                  </p>
+
+                  <Fl label="Which units on our lot did you show them?" hint="Stock numbers or models. If the answer is none, go do that first." req>
+                    <TA value={d.shown} onChange={s("shown")} placeholder="T26-1044 Highlander XLE, T26-2210 Grand Highlander XLE..." rows={2} />
+                  </Fl>
+
+                  <Fl label="Why didn't those work?" hint="Be specific. 'Wrong color' is a reason to keep selling, not a reason to trade." req>
+                    <TA value={d.whyNot} onChange={s("whyNot")} placeholder="Needed a third row bench, ours are all captain's chairs..." rows={2} />
+                  </Fl>
+
+                  {[
+                    { k: "triedStock", label: "I showed them comparable units on our lot and worked to earn the sale here.", req: true },
+                    { k: "explainedWait", label: "I told them a trade takes time and isn't guaranteed.", req: false },
+                  ].map(c => (
+                    <div key={c.k} onClick={() => { startTimer(); setD(p => ({ ...p, [c.k]: !p[c.k] })); }} style={{
+                      display: "flex", alignItems: "flex-start", gap: 9, cursor: "pointer", marginBottom: 8,
+                      padding: "9px 11px", borderRadius: 8,
+                      background: d[c.k] ? "#F0FDF4" : B.w,
+                      border: `1.5px solid ${d[c.k] ? "#BBF7D0" : "#eee"}`,
+                    }}>
+                      <div style={{
+                        width: 18, height: 18, borderRadius: 5, flexShrink: 0, marginTop: 1,
+                        background: d[c.k] ? B.grn : B.w,
+                        border: `1.5px solid ${d[c.k] ? B.grn : "#ccc"}`,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
+                        {d[c.k] && <CheckCircle2 size={12} color={B.w} />}
+                      </div>
+                      <span style={{ fontFamily: F, fontSize: 12.5, color: d[c.k] ? "#166534" : "#555", lineHeight: 1.4, fontWeight: d[c.k] ? 600 : 400 }}>
+                        {c.label}{c.req && <span style={{ color: B.red, marginLeft: 3 }}>*</span>}
+                      </span>
+                    </div>
+                  ))}
+                </div>
 
                 {/* OPTION 1 */}
                 <div style={{ marginBottom: 20 }}>
