@@ -11,7 +11,6 @@ const F = "'Helvetica Neue',Helvetica,Arial,sans-serif";
 const SALESPEOPLE = [
   { name: "Nick Plank", email: "nplank@anderson-auto.net" },
   { name: "Kojak McKown", email: "pmckown@anderson-auto.net" },
-  { name: "Bailey Hilt", email: "bhilt@anderson-auto.net" },
   { name: "D'Marcus Anthony", email: "danthony@anderson-auto.net" },
   { name: "Mario Aguilera", email: "maguilera@anderson-auto.net" },
   { name: "Will Thermidor", email: "lthermidor@anderson-auto.net" },
@@ -29,10 +28,8 @@ const SALESPEOPLE = [
   { name: "Jayden Hodges", email: "jayden.hodges@anderson-auto.net" },
   { name: "Louis Mazzaro", email: "lmazzaro@anderson-auto.net" },
   { name: "Henry Rosales Guerrero", email: "henry.rosalesguerrero@anderson-auto.net" },
-  { name: "Arlex Lacayo", email: "alacayo@anderson-auto.net" },
   { name: "Steven Herrera", email: "steven.herrera@anderson-auto.net" },
   { name: "Christian Odio", email: "christian.odio@anderson-auto.net" },
-  { name: "Jessica Dykstra", email: "jdykstra@anderson-auto.net" },
   { name: "Renny Ontiveros", email: "ROntiveros@anderson-auto.net" },
   { name: "Peter Esposito", email: "PEsposito@anderson-auto.net" },
   { name: "Cody Thompson", email: "cody.thompson@anderson-auto.net" },
@@ -49,7 +46,6 @@ const SALESPEOPLE = [
 const MANAGER_EMAILS = [
   "asanchez@anderson-auto.net",
   "mgelsleichter@anderson-auto.net",
-  "kcarter@anderson-auto.net",
   "kweaver@anderson-auto.net",
   "kdepiano@anderson-auto.net",
   "gcatalanotto@anderson-auto.net",
