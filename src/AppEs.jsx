@@ -44,6 +44,7 @@ const SALESPEOPLE = [
   { name: "Steven Tabora", email: "stabora@anderson-auto.net" },
   { name: "Khasai Sherriffe", email: "ksherriffe@anderson-auto.net" },
   { name: "Brian Martin", email: "bmartin@anderson-auto.net" },
+  { name: "Matthew Troncone", email: "mtroncone@anderson-auto.net" },
 ];
 
 const MANAGER_EMAILS = [
