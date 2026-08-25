@@ -35,11 +35,14 @@ export default async function handler(req, res) {
         notes TEXT,
         duration INTEGER DEFAULT 0,
         submitted_at TIMESTAMPTZ DEFAULT NOW(),
-        lang TEXT DEFAULT 'en'
+        lang TEXT DEFAULT 'en',
+        heard_about TEXT DEFAULT ''
       )
     `;
     // Add lang column if it doesn't exist (migration for existing tables)
     await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS lang TEXT DEFAULT 'en'`;
+    // Add heard_about column if it doesn't exist (migration for existing tables)
+    await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS heard_about TEXT DEFAULT ''`;
     return res.status(200).json({ success: true, message: "Table created" });
   } catch (err) {
     return res.status(500).json({ error: err.message });

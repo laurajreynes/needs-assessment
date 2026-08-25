@@ -15,7 +15,7 @@ const TEAMS = [
   { sm: "Morgan Gelsleichter",members: ["Christian Odio","Kelly Floyd","Jayden Hodges","Cody Thompson","Miguel Medina"] },
   { sm: "Brian Burton",       members: ["Steven Herrera","Mario Aguilera","Baha Sadri","Moises Capote","Brian Martin"] },
   { sm: "Kelly Weaver",       members: ["Kojak McKown","Michael Montenegro","Damian Flores","Steven Tabora","Joshua Reyes"] },
-  { sm: "Kevin Depiano",      members: ["Ashton Taylor","Renny Ontiveros","D'Marcus Anthony","Luis Ferrer Jimenez","Will Thermidor"] },
+  { sm: "Kevin Depiano",      members: ["Ashton Taylor","Renny Ontiveros","D'Marcus Anthony","Luis Ferrer Jimenez","Will Thermidor","Matthew Troncone"] },
   { sm: "Gary Catalanatto",   members: ["Louis Mazzaro","Zak Banwart","Khasai Sherriffe","Jeff Princile","Alex Coolen"] },
 ];
 
@@ -63,7 +63,7 @@ const PERIODS = [
 const downloadCSV = (rows) => {
   if (!rows.length) return;
   const headers = [
-    "Date","Salesperson","Customer","Stock","Vehicle Year","Vehicle Make","Vehicle Model",
+    "Date","Salesperson","Customer","Heard About Us","Stock","Vehicle Year","Vehicle Make","Vehicle Model",
     "Motivation","Has Trade","Trade Vehicle","Trade Likes","Trade Dislikes",
     "Trade Lender","Trade Balance","Trade Payment",
     "Recent Vehicle","Recent Likes","Recent Dislikes",
@@ -78,7 +78,7 @@ const downloadCSV = (rows) => {
   const lines = [headers.join(",")];
   rows.forEach(r => {
     lines.push([
-      new Date(r.submitted_at).toLocaleDateString(), r.salesperson, r.customer, r.stock,
+      new Date(r.submitted_at).toLocaleDateString(), r.salesperson, r.customer, r.heard_about, r.stock,
       r.vehicle_year, r.vehicle_make, r.vehicle_model,
       r.motivation, r.has_trade ? "Yes" : "No", r.trade_vehicle, r.trade_like, r.trade_dislike,
       r.trade_lender, r.trade_balance, r.trade_payment,
@@ -197,6 +197,12 @@ export default function Dashboard() {
   });
   const topHot = Object.entries(hotCounts).sort((a, b) => b[1] - a[1]).slice(0, 8);
 
+  // How they heard about us — advertising attribution
+  const heardCounts = {};
+  submissions.forEach(s => { if (s.heard_about) heardCounts[s.heard_about] = (heardCounts[s.heard_about] || 0) + 1; });
+  const topHeard = Object.entries(heardCounts).sort((a, b) => b[1] - a[1]);
+  const heardAnswered = topHeard.reduce((a, [, n]) => a + n, 0);
+
   // Filtered by salesperson
   const filtered = filter
     ? submissions.filter(s => s.salesperson?.toLowerCase().includes(filter.toLowerCase()))
@@ -222,6 +228,7 @@ export default function Dashboard() {
             </div>
             <span style={{ background: B.red, color: B.w, padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600 }}>{fmt(s.duration)}</span>
           </div>
+          {s.heard_about && <Row label="Heard About Us" value={s.heard_about} />}
           {s.stock && <Row label="Stock #" value={s.stock} />}
           <Row label="Vehicle" value={[s.vehicle_year, s.vehicle_make, s.vehicle_model].filter(Boolean).join(" ")} />
           <Row label="Motivation" value={s.motivation} />
@@ -502,6 +509,28 @@ export default function Dashboard() {
           </Card>
         )}
       </div>
+
+      {/* How They Heard About Us — advertising attribution */}
+      {topHeard.length > 0 && (
+        <Card>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
+            <h3 style={{ margin: 0, fontSize: 15, color: B.blk }}>How They Heard About Us</h3>
+            <span style={{ fontSize: 11, color: "#888" }}>{heardAnswered} of {total} answered</span>
+          </div>
+          <p style={{ fontSize: 11, color: "#888", margin: "0 0 12px" }}>Where the traffic is actually coming from.</p>
+          {topHeard.map(([src, count]) => (
+            <div key={src} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <div style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>{src}</div>
+              <div style={{ width: 140, height: 8, background: "#eee", borderRadius: 4, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${(count / topHeard[0][1]) * 100}%`, background: B.red, borderRadius: 4 }} />
+              </div>
+              <span style={{ fontSize: 12, color: "#888", minWidth: 62, textAlign: "right" }}>
+                {count} · {Math.round((count / heardAnswered) * 100)}%
+              </span>
+            </div>
+          ))}
+        </Card>
+      )}
 
       {/* Daily Activity */}
       {byDay.length > 0 && (

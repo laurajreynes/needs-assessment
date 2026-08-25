@@ -9,7 +9,6 @@ const F = "'Helvetica Neue',Helvetica,Arial,sans-serif";
 
 /* ── DIRECTORIO DE PERSONAL ── */
 const SALESPEOPLE = [
-  { name: "Nick Plank", email: "nplank@anderson-auto.net" },
   { name: "Kojak McKown", email: "pmckown@anderson-auto.net" },
   { name: "D'Marcus Anthony", email: "danthony@anderson-auto.net" },
   { name: "Mario Aguilera", email: "maguilera@anderson-auto.net" },
@@ -120,8 +119,23 @@ const getHot = (d) => {
   return Object.entries(scores).sort((a, b) => b[1] - a[1]).map(([k]) => k).slice(0, 5);
 };
 
+/* ── COMO SE ENTERO DE NOSOTROS ── los valores guardados son los mismos que en ingles */
+const HEARD_OPTIONS = [
+  { value: "TV", label: "Television" },
+  { value: "Radio", label: "Radio" },
+  { value: "Billboard", label: "Valla publicitaria" },
+  { value: "Online search / Website", label: "Busqueda en internet / Sitio web" },
+  { value: "Social media", label: "Redes sociales" },
+  { value: "Word of mouth / Referral", label: "Recomendacion de alguien" },
+  { value: "Direct mail / Mailer", label: "Correo directo" },
+  { value: "Returning customer", label: "Cliente que regresa" },
+  { value: "Service customer", label: "Cliente de servicio" },
+  { value: "Drove by / Location", label: "Pasaba por aqui" },
+  { value: "Other", label: "Otro" },
+];
+
 const defaultData = {
-  sp: "", cn: "", stk: "", vy: "", vm: "", vmod: "",
+  sp: "", cn: "", hh: "", stk: "", vy: "", vm: "", vmod: "",
   mot: "",
   tv: "", tlike: "", tdis: "",
   tlen: "", tbal: "", tpay: "",
@@ -149,6 +163,7 @@ const buildEmailHTML = (sub) => {
       <table style="width:100%;border-collapse:collapse">
         ${r("Cliente", sub.cn)}
         ${r("Vendedor/a", sub.sp)}
+        ${r("Como se entero", sub.hh)}
         ${r("Fecha", new Date(sub.ts).toLocaleString())}
       </table>
       ${(sub.stk || sub.vm || sub.vmod) ? section("Vehiculo de Interes", [r("Stock #", sub.stk), r("Vehiculo", [sub.vy, sub.vm, sub.vmod].filter(Boolean).join(" "))]) : ""}
@@ -478,6 +493,11 @@ export default function NeedsAssessment() {
           <p style={{ margin: "4px 0 0", fontSize: 12, color: "rgba(255,255,255,0.7)" }}>
             Vendedor/a: {l.sp || "\u2014"} &bull; Duracion: {dur}
           </p>
+          {l.hh && (
+            <p style={{ margin: "4px 0 0", fontSize: 12, color: "rgba(255,255,255,0.7)" }}>
+              Como se entero: {l.hh}
+            </p>
+          )}
         </div>
 
         {/* Estado del email */}
@@ -730,6 +750,13 @@ export default function NeedsAssessment() {
               </select>
             </Fl>
             <Fl label="Nombre del Cliente"><In value={d.cn} onChange={s("cn")} placeholder="Nombre" /></Fl>
+            <Fl label="¿Como se entero de nosotros?" hint="Preguntelo al principio — nos dice donde esta funcionando la publicidad.">
+              <select style={{ ...sIn, background: B.w }} value={d.hh} onChange={e => s("hh")(e.target.value)}
+                onFocus={e => { e.target.style.borderColor = B.red }} onBlur={e => { e.target.style.borderColor = "#ddd" }}>
+                <option value="">Seleccione una opcion</option>
+                {HEARD_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </Fl>
           </Sec>
         </FadeIn>
 

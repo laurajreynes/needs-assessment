@@ -9,7 +9,6 @@ const F = "'Helvetica Neue',Helvetica,Arial,sans-serif";
 
 /* ── STAFF DIRECTORY ── */
 const SALESPEOPLE = [
-  { name: "Nick Plank", email: "nplank@anderson-auto.net" },
   { name: "Kojak McKown", email: "pmckown@anderson-auto.net" },
   { name: "D'Marcus Anthony", email: "danthony@anderson-auto.net" },
   { name: "Mario Aguilera", email: "maguilera@anderson-auto.net" },
@@ -120,8 +119,23 @@ const getHot = (d) => {
   return Object.entries(scores).sort((a, b) => b[1] - a[1]).map(([k]) => k).slice(0, 5);
 };
 
+/* ── HOW DID YOU HEAR ABOUT US ── attribution for ad spend */
+const HEARD_OPTIONS = [
+  "TV",
+  "Radio",
+  "Billboard",
+  "Online search / Website",
+  "Social media",
+  "Word of mouth / Referral",
+  "Direct mail / Mailer",
+  "Returning customer",
+  "Service customer",
+  "Drove by / Location",
+  "Other",
+];
+
 const defaultData = {
-  sp: "", cn: "", stk: "", vy: "", vm: "", vmod: "",
+  sp: "", cn: "", hh: "", stk: "", vy: "", vm: "", vmod: "",
   mot: "",
   tv: "", tlike: "", tdis: "",
   tlen: "", tbal: "", tpay: "",
@@ -149,6 +163,7 @@ const buildEmailHTML = (sub) => {
       <table style="width:100%;border-collapse:collapse">
         ${r("Customer", sub.cn)}
         ${r("Salesperson", sub.sp)}
+        ${r("Heard about us", sub.hh)}
         ${r("Date", new Date(sub.ts).toLocaleString())}
       </table>
       ${(sub.stk || sub.vm || sub.vmod) ? section("Vehicle of Interest", [r("Stock #", sub.stk), r("Vehicle", [sub.vy, sub.vm, sub.vmod].filter(Boolean).join(" "))]) : ""}
@@ -478,6 +493,11 @@ export default function NeedsAssessment() {
           <p style={{ margin: "4px 0 0", fontSize: 12, color: "rgba(255,255,255,0.7)" }}>
             Salesperson: {l.sp || "\u2014"} &bull; Duration: {dur}
           </p>
+          {l.hh && (
+            <p style={{ margin: "4px 0 0", fontSize: 12, color: "rgba(255,255,255,0.7)" }}>
+              Heard about us: {l.hh}
+            </p>
+          )}
         </div>
 
         {/* Email status */}
@@ -730,6 +750,13 @@ export default function NeedsAssessment() {
               </select>
             </Fl>
             <Fl label="Customer First Name"><In value={d.cn} onChange={s("cn")} placeholder="First name" /></Fl>
+            <Fl label="How did you hear about us?" hint="Ask it early — it tells us where our advertising is working.">
+              <select style={{ ...sIn, background: B.w }} value={d.hh} onChange={e => s("hh")(e.target.value)}
+                onFocus={e => { e.target.style.borderColor = B.red }} onBlur={e => { e.target.style.borderColor = "#ddd" }}>
+                <option value="">Select one</option>
+                {HEARD_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </Fl>
           </Sec>
         </FadeIn>
 
