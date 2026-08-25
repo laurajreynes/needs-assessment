@@ -130,8 +130,6 @@ const HEARD_OPTIONS = [
   { value: "Direct mail / Mailer", label: "Correo directo" },
   { value: "Returning customer", label: "Cliente que regresa" },
   { value: "Service customer", label: "Cliente de servicio" },
-  { value: "Drove by / Location", label: "Pasaba por aqui" },
-  { value: "Other", label: "Otro" },
 ];
 
 const defaultData = {

@@ -130,8 +130,6 @@ const HEARD_OPTIONS = [
   "Direct mail / Mailer",
   "Returning customer",
   "Service customer",
-  "Drove by / Location",
-  "Other",
 ];
 
 const defaultData = {

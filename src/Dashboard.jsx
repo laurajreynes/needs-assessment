@@ -10,6 +10,15 @@ const walkaroundLabels = {
   offroad: "Off-Road Capability", family: "Family Friendly",
 };
 
+/* Compact display names for the attribution card — stored values stay full */
+const heardShort = {
+  "Word of mouth / Referral": "Word of Mouth",
+  "Online search / Website": "Online / Website",
+  "Direct mail / Mailer": "Direct Mail",
+  "Returning customer": "Returning Customer",
+  "Service customer": "Service Customer",
+};
+
 const TEAMS = [
   { sm: "Ariel Sanchez",      members: ["Carlos Tamayo","Manuel Fernandez Segui","Alain Pino","Henry Rosales Guerrero","Peter Esposito"] },
   { sm: "Morgan Gelsleichter",members: ["Christian Odio","Kelly Floyd","Jayden Hodges","Cody Thompson","Miguel Medina"] },
@@ -326,12 +335,35 @@ export default function Dashboard() {
       </div>
 
       {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 16 }}>
         <Stat label="Assessments" value={total} sub={period !== "all" ? `${allStats.total} all time` : undefined} />
         <Stat label="Avg Discovery" value={fmt(avgDur)} />
         <Stat label="Trade-In Rate" value={`${tradeRate}%`} sub={`${tradeCount} of ${total}`} />
         <Stat label="Active Salespeople" value={activeSp} sub={`of ${teamMembers.length}`} />
       </div>
+
+      {/* How They Heard About Us — advertising attribution, compact so it sits up top */}
+      {topHeard.length > 0 && (
+        <Card>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10, flexWrap: "wrap", gap: 6 }}>
+            <h3 style={{ margin: 0, fontSize: 15, color: B.blk }}>How They Heard About Us</h3>
+            <span style={{ fontSize: 11, color: "#888" }}>{heardAnswered} of {total} answered</span>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: "8px 24px" }}>
+            {topHeard.map(([src, count]) => (
+              <div key={src} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ flex: 1, fontSize: 13, fontWeight: 600, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{heardShort[src] || src}</div>
+                <div style={{ width: 70, height: 8, background: "#eee", borderRadius: 4, overflow: "hidden", flexShrink: 0 }}>
+                  <div style={{ height: "100%", width: `${(count / topHeard[0][1]) * 100}%`, background: B.red, borderRadius: 4 }} />
+                </div>
+                <span style={{ fontSize: 12, color: "#888", minWidth: 58, textAlign: "right", flexShrink: 0 }}>
+                  {count} · {Math.round((count / heardAnswered) * 100)}%
+                </span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* Team Scoreboard */}
       <Card>
@@ -469,7 +501,7 @@ export default function Dashboard() {
       </Card>
 
       {/* Patterns row: Activity by Salesperson + Top Walkaround Focus */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(420px, 1fr))", gap: 16, marginBottom: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 16, marginBottom: 16 }}>
         {/* Activity by Salesperson */}
         {bySp.length > 0 && (
           <Card>
@@ -509,28 +541,6 @@ export default function Dashboard() {
           </Card>
         )}
       </div>
-
-      {/* How They Heard About Us — advertising attribution */}
-      {topHeard.length > 0 && (
-        <Card>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
-            <h3 style={{ margin: 0, fontSize: 15, color: B.blk }}>How They Heard About Us</h3>
-            <span style={{ fontSize: 11, color: "#888" }}>{heardAnswered} of {total} answered</span>
-          </div>
-          <p style={{ fontSize: 11, color: "#888", margin: "0 0 12px" }}>Where the traffic is actually coming from.</p>
-          {topHeard.map(([src, count]) => (
-            <div key={src} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-              <div style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>{src}</div>
-              <div style={{ width: 140, height: 8, background: "#eee", borderRadius: 4, overflow: "hidden" }}>
-                <div style={{ height: "100%", width: `${(count / topHeard[0][1]) * 100}%`, background: B.red, borderRadius: 4 }} />
-              </div>
-              <span style={{ fontSize: 12, color: "#888", minWidth: 62, textAlign: "right" }}>
-                {count} · {Math.round((count / heardAnswered) * 100)}%
-              </span>
-            </div>
-          ))}
-        </Card>
-      )}
 
       {/* Daily Activity */}
       {byDay.length > 0 && (
